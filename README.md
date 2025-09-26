@@ -1,234 +1,227 @@
-This **CrewAI Masumi Starter Kit** lets you quickly deploy your own CrewAI agents and integrate them with Masumi’s decentralized payment solution.
-[Follow this guide](https://docs.masumi.network/documentation/how-to-guides/agent-from-zero-to-hero)
+# AI Automated Budget Planner
 
-**Key benefits:**
+This **AI Automated Budget Planner** is built using the CrewAI Masumi Starter Kit and provides personalized budget planning through AI-powered financial analysis. The application integrates with India's Account Aggregator (AA) framework to fetch financial data and uses a multi-agent CrewAI system to generate actionable budget insights.
 
-- Simple setup: Just clone, configure, and deploy.
-- Integrated with Masumi for automated decentralized payments on Cardano.
-- Production-ready API built with FastAPI.
+## 🚀 Key Features
 
----
+- **Multi-Agent AI System**: Four specialized CrewAI agents work together to analyze your finances
+- **Account Aggregator Integration**: Secure financial data fetching via India's AA framework
+- **Personalized Budget Plans**: AI-generated recommendations based on the 50/30/20 rule
+- **Interactive Dashboard**: React frontend with charts and visualizations
+- **Masumi Payment Integration**: Monetized AI services with decentralized payments
 
-Follow these steps to quickly get your CrewAI agents live and monetized on Masumi.
+## 🏗️ Architecture
 
-### **1. Clone Repository**
+### Backend (FastAPI)
+- **Transaction Categorizer Agent** 🗂️: Intelligently categorizes transactions
+- **Financial Analyst Agent** 📊: Analyzes spending patterns and calculates key metrics
+- **Budget Strategist Agent** 💡: Creates personalized budget recommendations
+- **Report Generator Agent** ✍️: Generates user-friendly financial reports
 
-Prerequisites:
+### Frontend (React + Vite + Tailwind)
+- Interactive dashboard with budget visualization
+- Real-time AI crew processing status
+- Spending breakdown charts using Recharts
+- Responsive design with Tailwind CSS
+
+### Data Integration
+- Account Aggregator (AA) client for secure financial data access
+- SQLite database for user data and budget reports
+- Mock transaction data for demo purposes
+
+## 📋 Prerequisites
 
 - Python >= 3.10 and < 3.13
+- Node.js >= 16
 - uv (Python package manager)
+- npm or yarn
 
-Clone the repository and navigate into the directory:
+## 🛠️ Setup Instructions
+
+### 1. Clone and Setup Backend
 
 ```bash
 git clone https://github.com/masumi-network/crewai-masumi-quickstart-template.git
 cd crewai-masumi-quickstart-template
 ```
 
-Install dependencies:
-
+Create Python virtual environment:
 ```bash
 uv venv --python 3.13
-source .venv/bin/activate
+source .venv/bin/activate  # On Windows: .venv\Scripts\activate
 uv pip install -r requirements.txt
 ```
 
----
+### 2. Configure Environment Variables
 
-### **2. Configure Your Environment Variables**
-
-Copy `.env.example` to `.env` and fill with your own data:
+Copy `.env.example` to `.env` and configure:
 
 ```bash
 cp .env.example .env
 ```
 
-Example `.env` configuration:
-
+Update `.env` with your credentials:
 ```ini
-# Payment Service
+# Payment Service (for Masumi integration)
 PAYMENT_SERVICE_URL=http://localhost:3001/api/v1
 PAYMENT_API_KEY=your_payment_key
-
-# Agent Configuration
-AGENT_IDENTIFIER=your_agent_identifier_from_registration
-PAYMENT_AMOUNT=10000000
-PAYMENT_UNIT=lovelace
+AGENT_IDENTIFIER=your_agent_identifier
 SELLER_VKEY=your_selling_wallet_vkey
 
 # OpenAI API
 OPENAI_API_KEY=your_openai_api_key
+
+# Account Aggregator (for production)
+AA_BASE_URL=https://sandbox.setu.co/api
+AA_API_KEY=your_aa_api_key
+AA_CLIENT_ID=your_aa_client_id
+
+# Network
+NETWORK=Preprod
 ```
 
-#### Get your OpenAI API key from the [OpenAI Developer Portal](https://platform.openai.com/api-keys)
+### 3. Setup Frontend
 
----
-
-### **3. Define Your CrewAI Agents**
-
-Look around the `crew_definition.py` file. It has a basic `ResearchCrew` defined. Here you can define your agent functionality. 
-
-If you're just starting and want to test everything from beginning to the end, you can do it withouth adding anything extra. 
-
-#### Test your agent:
-
-You can test your agent as a standalone script, without having it registered on Masumi.
-
-To do so, add this to the end of main.py file instead of the existing way of running the API (comment that one out):
-
-```python
-def main():
-    input_data = {"text": "The impact of AI on the job market"}
-    crew = ResearchCrew()
-    result = crew.crew.kickoff(input_data)
-    print("\nCrew Output:\n", result)
-
-if __name__ == "__main__":
-    main()
+Navigate to frontend directory and install dependencies:
+```bash
+cd frontend
+npm install
 ```
 
-#### Run it
+### 4. Run the Application
 
-```python
-python main.py
-```
-
----
-
-###  **4. Expose Your Agent via API**
-
-Now we'll expose the agent via a FastAPI interface that follows the [MIP-003](https://github.com/masumi-network/masumi-improvement-proposals/blob/main/MIPs/MIP-003/MIP-003) standard.
-
-Return `main.py` to its original state.
-
-The API provides these endpoints:
-
-- `GET /input_schema` - Returns input requirements
-- `GET /availability` - Checks server status
-- `POST /start_job` - Starts a new AI task
-- `GET /status` - Checks job status
-- `POST /provide_input` - Provides additional input
-
-```
-Temporary job storage warning: For simplicity, jobs are stored in memory (jobs = {}). In production, use a database like PostgreSQL and consider message queues for background processing.
-```
-
-#### Run the API server:
-
-```python
+#### Start Backend Server:
+```bash
+# From project root
 python main.py api
 ```
+Backend will be available at: http://localhost:8000
 
-Access the interactive API documentation at:
-http://localhost:8000/docs
-
----
-
-### 💳 **5. Install the Masumi Payment Service**
-
-The Masumi Payment Service handles all blockchain payments for your agent.
-
-Follow the [Installation Guide](https://docs.masumi.network/documentation/get-started/installation) to set up the payment service.
-
-Once installed (locally), your payment service will be available at:
-
-- Admin Dashboard: http://localhost:3001/admin
-- API Documentation: http://localhost:3001/docs
-
-If you used some other way of deployment, for example with Rialway, you have to find the URL there. 
-
-Verify it's running:
-
+#### Start Frontend Development Server:
 ```bash
-curl -X GET 'http://localhost:3001/api/v1/health/' -H 'accept: application/json'
+# From frontend directory
+npm run dev
 ```
+Frontend will be available at: http://localhost:3000
 
-You should receive:
+## 🎯 Usage
 
-```
-{
-  "status": "success",
-  "data": {
-    "status": "ok"
-  }
-}
-```
+### Demo Mode (No Payment Required)
 
----
+1. Open http://localhost:3000 in your browser
+2. Enter a user ID (e.g., "demo_user")
+3. Click "Generate My Budget Plan"
+4. Watch the AI crew analyze mock financial data
+5. View your personalized budget report and spending charts
 
-### **6. Top Up Your Wallet with Test ADA**
+### Production Mode (With Masumi Payments)
 
-Get free Test ADA from Cardano Faucet:
+1. Set up the Masumi Payment Service following the [Installation Guide](https://docs.masumi.network/documentation/get-started/installation)
+2. Register your agent on Masumi Network
+3. Use the `/start_job` endpoint for paid budget planning services
 
-- Copy your Selling Wallet address from the Masumi Dashboard.
-- Visit the [Cardano Faucet](https://docs.cardano.org/cardano-testnets/tools/faucet) or the [Masumi Dispencer](https://dispenser.masumi.network/).
-- Request Test ADA (Preprod network).
+## 🤖 AI Crew Workflow
 
----
+The budget planning process involves four AI agents working sequentially:
 
-### **7. Register Your Crew on Masumi**
+1. **Transaction Categorizer** 🗂️
+   - Parses raw transaction JSON from AA framework
+   - Categorizes transactions into: Income, Groceries, Utilities, Rent/Mortgage, EMI, Transport, Dining Out, Shopping, Entertainment, Subscriptions, Miscellaneous
+   - Uses intelligent rules and LLM reasoning for ambiguous transactions
 
-Before accepting payments, register your agent on the Masumi Network.
+2. **Financial Analyst** 📊
+   - Calculates total income, expenses, and savings rate
+   - Generates spending breakdown by category
+   - Identifies recurring payments and top expenses
+   - Outputs structured financial analysis
 
-1. Get your payment source information using [/payment-source/](https://docs.masumi.network/api-reference/payment-service/get-payment-source) endpoint, you will need `walletVkey` from the Selling Wallet (look for `"network": "PREPROD"`).:
+3. **Budget Strategist** 💡
+   - Applies 50/30/20 budgeting rule (Needs/Wants/Savings)
+   - Creates category-specific spending recommendations
+   - Generates actionable insights based on spending patterns
 
+4. **Report Generator** ✍️
+   - Combines analysis and strategy into user-friendly report
+   - Uses encouraging, supportive tone
+   - Provides clear, actionable recommendations
 
-2.Register your CrewAI agent via Masumi’s API using the [POST /registry](https://docs.masumi.network/api-reference/payment-service/post-registry) endpoint.
+## 📊 API Endpoints
 
-It will take a few minutes for the agnet to register, you can track it's state in the admin dashboard. 
+### Budget Planning
+- `POST /generate_budget_plan` - Generate budget plan (demo mode)
+- `POST /start_job` - Start paid budget planning job
+- `GET /status?job_id={id}` - Check job status
 
-3. Once the agent is rerigstered, get your agent identifier [`GET /registry/`](https://docs.masumi.network/api-reference/payment-service/get-registry)
+### Masumi Integration
+- `GET /availability` - Check server availability
+- `GET /input_schema` - Get input requirements
+- `GET /health` - Health check
 
-Note your `agentIdentifier` from the response and update it in your `.env` file and update`PAYMENT_API_KEY`
+## 🔧 Development
 
-Create an PAYMENT_API key using [`GET /api-key/`](https://docs.masumi.network/api-reference/registry-service/get-api-key)
+### Adding New Features
 
----
+1. **New AI Agents**: Add to `app/crew.py`
+2. **Database Models**: Update `app/models.py`
+3. **API Endpoints**: Add to `main.py`
+4. **Frontend Components**: Add to `frontend/src/components/`
 
-### **8. Test Your Monetized Agent**
+### Testing
 
-Your agent is now ready to accept payments! Test the complete workflow:
-
-Start a paid job:
-
+Test the budget planning workflow:
 ```bash
-curl -X POST "http://localhost:8000/start_job" \
+curl -X POST "http://localhost:8000/generate_budget_plan" \
 -H "Content-Type: application/json" \
--d '{
-    "identifier_from_purchaser": "<put HEX of even character>",
-    "input_data": {"text": "artificial intelligence trends"}
-}'
+-d '{"user_id": "test_user"}'
 ```
 
-This returns a `job_id`.
+## 🚀 Deployment
 
-Check job status:
+### Backend Deployment
+- Deploy FastAPI app to your preferred platform (Railway, Heroku, AWS)
+- Ensure environment variables are configured
+- Set up production database (PostgreSQL recommended)
 
-`curl -X GET "http://localhost:8000/status?job_id=your_job_id"`
-
-Make the payment (from another agent or client):
-
+### Frontend Deployment
 ```bash
-curl -X POST 'http://localhost:3001/api/v1/purchase' \
-  -H 'Content-Type: application/json' \
-  -H 'token: purchaser_api_key' \
-  -d '{
-    "agent_identifier": "your_agent_identifier"
-  }'
+cd frontend
+npm run build
+# Deploy dist/ folder to your hosting platform
 ```
 
-## Your agent will process the job and return results once payment is confirmed!
+## 🔗 Integration with Account Aggregator
 
+The application integrates with India's Account Aggregator framework for secure financial data access:
 
+1. **Consent Management**: Request user consent for data access
+2. **Data Fetching**: Retrieve transaction data from multiple bank accounts
+3. **Privacy**: No storage of sensitive financial data
 
+For production, integrate with AA providers like:
+- [Setu](https://setu.co/)
+- [Finvu](https://finvu.in/)
+- [CAMS Finserv](https://www.camsonline.com/)
 
- **Next Step**: For production deployments, replace the in-memory store with a persistent database.
-
----
-
-## **Useful Resources**
+## 📚 Resources
 
 - [CrewAI Documentation](https://docs.crewai.com)
 - [Masumi Documentation](https://docs.masumi.network)
-- [FastAPI](https://fastapi.tiangolo.com)
-- [Cardano Testnet Faucet](https://docs.cardano.org/cardano-testnets/tools/faucet)
+- [Account Aggregator Framework](https://www.rbi.org.in/Scripts/BS_PressReleaseDisplay.aspx?prid=50465)
+- [FastAPI Documentation](https://fastapi.tiangolo.com)
+- [React Documentation](https://react.dev)
+
+## 🤝 Contributing
+
+1. Fork the repository
+2. Create a feature branch
+3. Make your changes
+4. Add tests if applicable
+5. Submit a pull request
+
+## 📄 License
+
+This project is licensed under the MIT License - see the LICENSE file for details.
+
+---
+
+**Built with ❤️ using CrewAI, Masumi, and the Account Aggregator framework**

@@ -1,0 +1,15 @@
+{
+  "name": "ai-budget-planner",
+  "version": "1.0.0",
+  "description": "AI Automated Budget Planner using CrewAI and Masumi",
+  "scripts": {
+    "install-frontend": "cd frontend && npm install",
+    "dev-frontend": "cd frontend && npm run dev",
+    "build-frontend": "cd frontend && npm run build",
+    "test": "python test_budget_planner.py",
+    "dev-backend": "python main.py api"
+  },
+  "keywords": ["ai", "budget", "crewai", "masumi", "fintech"],
+  "author": "AI Budget Planner Team",
+  "license": "MIT"
+}

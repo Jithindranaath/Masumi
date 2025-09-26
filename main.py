@@ -1,12 +1,16 @@
 import os
 import uvicorn
 import uuid
+import json
 from dotenv import load_dotenv
 from fastapi import FastAPI, Query, HTTPException
+from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field, field_validator
 from masumi.config import Config
 from masumi.payment import Payment, Amount
 from crew_definition import ResearchCrew
+from app.services.aa_client import AAClient
+from app.models import create_tables, SessionLocal, BudgetReport
 from logging_config import setup_logging
 
 # Configure logging
@@ -26,10 +30,25 @@ logger.info(f"PAYMENT_SERVICE_URL: {PAYMENT_SERVICE_URL}")
 
 # Initialize FastAPI
 app = FastAPI(
-    title="API following the Masumi API Standard",
-    description="API for running Agentic Services tasks with Masumi payment integration",
+    title="AI Automated Budget Planner",
+    description="AI-powered budget planning service with Masumi payment integration",
     version="1.0.0"
 )
+
+# Add CORS middleware for frontend
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["http://localhost:3000", "http://localhost:5173"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+# Initialize database
+create_tables()
+
+# Initialize AA Client
+aa_client = AAClient()
 
 # ─────────────────────────────────────────────────────────────────────────────
 # Temporary in-memory job store (DO NOT USE IN PRODUCTION)
@@ -57,8 +76,19 @@ class StartJobRequest(BaseModel):
             "example": {
                 "identifier_from_purchaser": "example_purchaser_123",
                 "input_data": {
-                    "text": "Write a story about a robot learning to paint"
+                    "user_id": "user123",
+                    "action": "generate_budget_plan"
                 }
+            }
+        }
+
+class BudgetPlanRequest(BaseModel):
+    user_id: str = Field(..., description="User identifier for budget planning")
+    
+    class Config:
+        json_schema_extra = {
+            "example": {
+                "user_id": "user123"
             }
         }
 
@@ -68,12 +98,40 @@ class ProvideInputRequest(BaseModel):
 # ─────────────────────────────────────────────────────────────────────────────
 # CrewAI Task Execution
 # ─────────────────────────────────────────────────────────────────────────────
-async def execute_crew_task(input_data: str) -> str:
-    """ Execute a CrewAI task with Research and Writing Agents """
-    logger.info(f"Starting CrewAI task with input: {input_data}")
+async def execute_crew_task(input_data: dict) -> str:
+    """ Execute a CrewAI budget planning task """
+    logger.info(f"Starting budget planning task for user: {input_data.get('user_id')}")
+    
+    # Fetch financial data via AA framework
+    user_id = input_data.get('user_id', 'demo_user')
+    transactions_data = await aa_client.fetch_data(user_id)
+    
+    # Execute the budget planning crew
     crew = ResearchCrew(logger=logger)
-    result = crew.crew.kickoff(inputs={"text": input_data})
-    logger.info("CrewAI task completed successfully")
+    result = crew.crew.kickoff(inputs={"transactions_data": json.dumps(transactions_data)})
+    
+    # Store result in database
+    db = SessionLocal()
+    try:
+        # Extract key metrics from result for storage
+        report_text = str(result)
+        budget_report = BudgetReport(
+            user_id=user_id,
+            report_data=report_text,
+            total_income=0.0,  # These would be extracted from the actual result
+            total_expenses=0.0,
+            savings_rate=0.0
+        )
+        db.add(budget_report)
+        db.commit()
+        logger.info(f"Budget report saved for user {user_id}")
+    except Exception as e:
+        logger.error(f"Error saving budget report: {str(e)}")
+        db.rollback()
+    finally:
+        db.close()
+    
+    logger.info("Budget planning task completed successfully")
     return result
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -177,7 +235,7 @@ async def handle_payment_status(job_id: str, payment_id: str) -> None:
 
         # Execute the AI task
         result = await execute_crew_task(jobs[job_id]["input_data"])
-        result_dict = result.json_dict
+        result_dict = result.json_dict if hasattr(result, 'json_dict') else {"result": str(result)}
         logger.info(f"Crew task completed for job {job_id}")
         
         # Mark payment as completed on Masumi
@@ -255,6 +313,30 @@ async def check_availability():
 # ─────────────────────────────────────────────────────────────────────────────
 # 5) Retrieve Input Schema (MIP-003: /input_schema)
 # ─────────────────────────────────────────────────────────────────────────────
+@app.post("/generate_budget_plan")
+async def generate_budget_plan(request: BudgetPlanRequest):
+    """Generate budget plan without payment (for demo purposes)"""
+    try:
+        logger.info(f"Generating budget plan for user: {request.user_id}")
+        
+        # Execute budget planning task
+        input_data = {
+            "user_id": request.user_id,
+            "action": "generate_budget_plan"
+        }
+        
+        result = await execute_crew_task(input_data)
+        
+        return {
+            "status": "success",
+            "user_id": request.user_id,
+            "budget_plan": str(result)
+        }
+        
+    except Exception as e:
+        logger.error(f"Error generating budget plan: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Error generating budget plan: {str(e)}")
+
 @app.get("/input_schema")
 async def input_schema():
     """
@@ -264,12 +346,21 @@ async def input_schema():
     return {
         "input_data": [
             {
-                "id": "text",
+                "id": "user_id",
                 "type": "string",
-                "name": "Task Description",
+                "name": "User ID",
                 "data": {
-                    "description": "The text input for the AI task",
-                    "placeholder": "Enter your task description here"
+                    "description": "User identifier for budget planning",
+                    "placeholder": "Enter your user ID"
+                }
+            },
+            {
+                "id": "action",
+                "type": "string",
+                "name": "Action",
+                "data": {
+                    "description": "Action to perform (generate_budget_plan)",
+                    "placeholder": "generate_budget_plan"
                 }
             }
         ]
