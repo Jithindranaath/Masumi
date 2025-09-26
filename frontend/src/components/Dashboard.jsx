@@ -13,9 +13,25 @@ const Dashboard = () => {
     setError(null)
     
     try {
-      const response = await axios.post('http://localhost:8000/generate_budget_plan', {
-        user_id: userId
-      })
+      // Try different common ports for backend
+      const possiblePorts = [8000, 8001, 8002, 8003, 3001, 5000];
+      let response = null;
+      
+      for (const port of possiblePorts) {
+        try {
+          response = await axios.post(`http://localhost:${port}/generate_budget_plan`, {
+            user_id: userId
+          }, { timeout: 2000 });
+          break; // Success, exit loop
+        } catch (err) {
+          if (port === possiblePorts[possiblePorts.length - 1]) {
+            // Last port failed, throw error
+            throw new Error('Backend server not found. Please start the backend server first.');
+          }
+          // Try next port
+          continue;
+        }
+      }
       
       setBudgetPlan(response.data.budget_plan)
     } catch (err) {

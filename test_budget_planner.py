@@ -14,7 +14,7 @@ logger = setup_logging()
 
 async def test_aa_client():
     """Test Account Aggregator client"""
-    print("🔍 Testing Account Aggregator Client...")
+    print("Testing Account Aggregator Client...")
     
     aa_client = AAClient()
     
@@ -22,15 +22,15 @@ async def test_aa_client():
     data = await aa_client.fetch_data("test_user")
     
     if "transactions" in data:
-        print(f"✅ AA Client working - fetched {len(data['transactions'])} transactions")
+        print(f"AA Client working - fetched {len(data['transactions'])} transactions")
         return data
     else:
-        print("❌ AA Client failed")
+        print("AA Client failed")
         return None
 
 def test_budget_crew(transactions_data):
     """Test Budget Planning Crew"""
-    print("\n🤖 Testing Budget Planning Crew...")
+    print("\nTesting Budget Planning Crew...")
     
     try:
         crew = BudgetPlannerCrew(verbose=False)
@@ -38,17 +38,17 @@ def test_budget_crew(transactions_data):
         # Test with mock data
         result = crew.crew.kickoff(inputs={"transactions_data": json.dumps(transactions_data)})
         
-        print("✅ Budget Planning Crew working")
-        print(f"📋 Generated report preview: {str(result)[:200]}...")
+        print("Budget Planning Crew working")
+        print(f"Generated report preview: {str(result)[:200]}...")
         return result
         
     except Exception as e:
-        print(f"❌ Budget Planning Crew failed: {str(e)}")
+        print(f"Budget Planning Crew failed: {str(e)}")
         return None
 
 async def main():
     """Run all tests"""
-    print("🚀 AI Budget Planner - System Test\n")
+    print("AI Budget Planner - System Test\n")
     
     # Test AA Client
     transactions_data = await test_aa_client()
@@ -58,15 +58,15 @@ async def main():
         result = test_budget_crew(transactions_data)
         
         if result:
-            print("\n🎉 All tests passed! Your AI Budget Planner is ready.")
+            print("\nAll tests passed! Your AI Budget Planner is ready.")
             print("\nNext steps:")
             print("1. Start the backend: python main.py api")
             print("2. Start the frontend: cd frontend && npm run dev")
             print("3. Open http://localhost:3000 in your browser")
         else:
-            print("\n❌ Budget crew test failed")
+            print("\nBudget crew test failed")
     else:
-        print("\n❌ AA client test failed")
+        print("\nAA client test failed")
 
 if __name__ == "__main__":
     asyncio.run(main())

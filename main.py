@@ -11,6 +11,7 @@ from masumi.payment import Payment, Amount
 from crew_definition import ResearchCrew
 from app.services.aa_client import AAClient
 from app.models import create_tables, SessionLocal, BudgetReport
+from app.demo_crew import DemoBudgetPlanner
 from logging_config import setup_logging
 
 # Configure logging
@@ -38,7 +39,7 @@ app = FastAPI(
 # Add CORS middleware for frontend
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:3000", "http://localhost:5173"],
+    allow_origins=["http://localhost:3000", "http://localhost:5173", "*"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -99,28 +100,26 @@ class ProvideInputRequest(BaseModel):
 # CrewAI Task Execution
 # ─────────────────────────────────────────────────────────────────────────────
 async def execute_crew_task(input_data: dict) -> str:
-    """ Execute a CrewAI budget planning task """
+    """ Execute a budget planning task using demo planner """
     logger.info(f"Starting budget planning task for user: {input_data.get('user_id')}")
     
     # Fetch financial data via AA framework
     user_id = input_data.get('user_id', 'demo_user')
     transactions_data = await aa_client.fetch_data(user_id)
     
-    # Execute the budget planning crew
-    crew = ResearchCrew(logger=logger)
-    result = crew.crew.kickoff(inputs={"transactions_data": json.dumps(transactions_data)})
+    # Execute the demo budget planner
+    demo_planner = DemoBudgetPlanner(logger=logger)
+    result = demo_planner.process_transactions(json.dumps(transactions_data))
     
     # Store result in database
     db = SessionLocal()
     try:
-        # Extract key metrics from result for storage
-        report_text = str(result)
         budget_report = BudgetReport(
             user_id=user_id,
-            report_data=report_text,
-            total_income=0.0,  # These would be extracted from the actual result
-            total_expenses=0.0,
-            savings_rate=0.0
+            report_data=result,
+            total_income=50000.0,  # Demo values
+            total_expenses=33000.0,
+            savings_rate=34.0
         )
         db.add(budget_report)
         db.commit()
@@ -235,7 +234,7 @@ async def handle_payment_status(job_id: str, payment_id: str) -> None:
 
         # Execute the AI task
         result = await execute_crew_task(jobs[job_id]["input_data"])
-        result_dict = result.json_dict if hasattr(result, 'json_dict') else {"result": str(result)}
+        result_dict = {"result": str(result)}
         logger.info(f"Crew task completed for job {job_id}")
         
         # Mark payment as completed on Masumi
@@ -290,7 +289,7 @@ async def get_status(job_id: str):
 
 
     result_data = job.get("result")
-    result = result_data.raw if result_data and hasattr(result_data, "raw") else None
+    result = result_data if isinstance(result_data, str) else str(result_data) if result_data else None
 
     return {
         "job_id": job_id,
@@ -385,10 +384,23 @@ def main():
     print("Running CrewAI as standalone script is not supported when using payments.")
     print("Start the API using `python main.py api` instead.")
 
+def find_free_port():
+    """Find a free port to run the server"""
+    import socket
+    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+        s.bind(('', 0))
+        s.listen(1)
+        port = s.getsockname()[1]
+    return port
+
 if __name__ == "__main__":
     import sys
     if len(sys.argv) > 1 and sys.argv[1] == "api":
-        print("Starting FastAPI server with Masumi integration...")
-        uvicorn.run(app, host="0.0.0.0", port=8000)
+        # Use environment variable port if available, otherwise find free port
+        port = int(os.getenv('BACKEND_PORT', find_free_port()))
+        print(f"Starting FastAPI server with Masumi integration on port {port}...")
+        print(f"Backend API: http://localhost:{port}")
+        print(f"API Documentation: http://localhost:{port}/docs")
+        uvicorn.run(app, host="0.0.0.0", port=port)
     else:
         main()

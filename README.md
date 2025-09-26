@@ -95,7 +95,7 @@ npm install
 # From project root
 python main.py api
 ```
-Backend will be available at: http://localhost:8000
+Backend will be available at: http://localhost:8001
 
 #### Start Frontend Development Server:
 ```bash
@@ -170,7 +170,7 @@ The budget planning process involves four AI agents working sequentially:
 
 Test the budget planning workflow:
 ```bash
-curl -X POST "http://localhost:8000/generate_budget_plan" \
+curl -X POST "http://localhost:8001/generate_budget_plan" \
 -H "Content-Type: application/json" \
 -d '{"user_id": "test_user"}'
 ```

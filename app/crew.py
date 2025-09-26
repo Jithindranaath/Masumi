@@ -1,5 +1,5 @@
 from crewai import Agent, Crew, Task, Process
-from crewai_tools import BaseTool
+from crewai.tools import BaseTool
 import pandas as pd
 import json
 import re
