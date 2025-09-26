@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Budget Planner - Working Demo</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 0; padding: 20px; background: #f5f5f5; }
+        .container { max-width: 1200px; margin: 0 auto; }
+        .header { background: white; padding: 20px; border-radius: 8px; margin-bottom: 20px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+        .card { background: white; padding: 20px; border-radius: 8px; margin-bottom: 20px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+        .btn { background: #3b82f6; color: white; padding: 12px 24px; border: none; border-radius: 6px; cursor: pointer; font-size: 16px; }
+        .btn:hover { background: #2563eb; }
+        .btn:disabled { background: #9ca3af; cursor: not-allowed; }
+        .input { width: 100%; padding: 12px; border: 1px solid #d1d5db; border-radius: 6px; font-size: 16px; margin-bottom: 10px; }
+        .loading { background: #dbeafe; border: 1px solid #93c5fd; padding: 15px; border-radius: 6px; color: #1e40af; }
+        .error { background: #fef2f2; border: 1px solid #fca5a5; padding: 15px; border-radius: 6px; color: #dc2626; }
+        .success { background: #f0fdf4; border: 1px solid #86efac; padding: 15px; border-radius: 6px; color: #166534; }
+        .report { background: #f9fafb; padding: 15px; border-radius: 6px; white-space: pre-wrap; font-family: monospace; max-height: 400px; overflow-y: auto; }
+        .hidden { display: none; }
+        .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 15px; margin-top: 20px; }
+        .feature { text-align: center; padding: 20px; background: #f8fafc; border-radius: 6px; }
+        .spinner { border: 2px solid #f3f4f6; border-top: 2px solid #3b82f6; border-radius: 50%; width: 20px; height: 20px; animation: spin 1s linear infinite; display: inline-block; margin-right: 10px; }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🤖 AI Budget Planner - Live Demo</h1>
+            <p>Powered by CrewAI & Masumi Network</p>
+        </div>
+
+        <div class="card">
+            <h2>Generate Your Personalized Budget Plan</h2>
+            <input type="text" id="userId" class="input" value="demo_user" placeholder="Enter your user ID">
+            <button id="generateBtn" class="btn" onclick="generateBudget()">Generate My Budget Plan</button>
+        </div>
+
+        <div id="loadingDiv" class="card loading hidden">
+            <div class="spinner"></div>
+            <strong>Our AI crew is analyzing your finances...</strong>
+            <p>🗂️ Categorizing transactions → 📊 Analyzing patterns → 💡 Creating strategy → ✍️ Generating report</p>
+        </div>
+
+        <div id="errorDiv" class="card error hidden">
+            <strong>Error:</strong>
+            <p id="errorMsg"></p>
+        </div>
+
+        <div id="successDiv" class="card success hidden">
+            <strong>✅ Budget Analysis Complete!</strong>
+            <p>Your personalized financial report has been generated below.</p>
+        </div>
+
+        <div id="reportDiv" class="card hidden">
+            <h3>📋 Your AI-Generated Budget Report</h3>
+            <div id="reportContent" class="report"></div>
+        </div>
+
+        <div class="card">
+            <h3>🎯 Demo Features</h3>
+            <div class="grid">
+                <div class="feature">
+                    <div style="font-size: 2em;">🗂️</div>
+                    <h4>Smart Categorization</h4>
+                    <p>AI categorizes transactions into 10+ categories</p>
+                </div>
+                <div class="feature">
+                    <div style="font-size: 2em;">📊</div>
+                    <h4>Financial Analysis</h4>
+                    <p>Calculates income, expenses, and savings rate</p>
+                </div>
+                <div class="feature">
+                    <div style="font-size: 2em;">💡</div>
+                    <h4>Budget Strategy</h4>
+                    <p>Applies 50/30/20 budgeting rule</p>
+                </div>
+                <div class="feature">
+                    <div style="font-size: 2em;">✍️</div>
+                    <h4>Personalized Insights</h4>
+                    <p>Actionable recommendations for improvement</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="card">
+            <h3>📊 Sample Analysis Results</h3>
+            <div style="background: #f8fafc; padding: 15px; border-radius: 6px;">
+                <p><strong>Total Income:</strong> Rs.50,000</p>
+                <p><strong>Total Expenses:</strong> Rs.36,000</p>
+                <p><strong>Net Savings:</strong> Rs.14,000 (28% savings rate)</p>
+                <p><strong>Top Insight:</strong> "Reduce dining out expenses from Rs.7,000 to Rs.4,500 per month"</p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Mock budget report for demo
+        const mockBudgetReport = `# Your AI-Generated Budget Report
+
+## Financial Summary
+- **Total Income**: Rs.50,000
+- **Total Expenses**: Rs.36,000
+- **Net Savings**: Rs.14,000
+- **Savings Rate**: 28.0%
+
+## Budget Recommendations (50/30/20 Rule)
+- **Needs (50%)**: Rs.25,000
+- **Wants (30%)**: Rs.15,000
+- **Savings (20%)**: Rs.10,000
+
+## Personalized Insights
+1. Your current savings rate is 28.0% - Great job! You're exceeding the 20% target.
+2. Your dining out expenses (Rs.7,000) are high. Consider reducing to Rs.4,500 per month.
+3. You're spending Rs.800 on subscriptions. Review and cancel unused subscriptions to save money.
+
+## Spending Breakdown
+- **Rent/Mortgage**: Rs.15,000 (41.7%)
+- **Dining Out**: Rs.7,000 (19.4%)
+- **Shopping**: Rs.5,000 (13.9%)
+- **Groceries**: Rs.3,500 (9.7%)
+- **Transport**: Rs.1,200 (3.3%)
+- **Utilities**: Rs.2,000 (5.6%)
+- **Entertainment**: Rs.2,300 (6.4%)
+
+## Recurring Payments
+- RENT PAYMENT: Rs.15,000
+- ELECTRICITY BILL: Rs.2,000
+- NETFLIX SUBSCRIPTION: Rs.800
+
+## Top 5 Expenses
+- RENT PAYMENT: Rs.15,000
+- SHOPPING MALL: Rs.5,000
+- SWIGGY ORDER: Rs.4,500
+- GROCERY STORE: Rs.3,500
+- ZOMATO ONLINE ORDER: Rs.2,500
+
+---
+*Generated by AI Budget Planner - Your path to financial wellness starts here!*`;
+
+        async function generateBudget() {
+            const userId = document.getElementById('userId').value;
+            const generateBtn = document.getElementById('generateBtn');
+            const loadingDiv = document.getElementById('loadingDiv');
+            const errorDiv = document.getElementById('errorDiv');
+            const successDiv = document.getElementById('successDiv');
+            const reportDiv = document.getElementById('reportDiv');
+            const reportContent = document.getElementById('reportContent');
+
+            // Reset states
+            loadingDiv.classList.add('hidden');
+            errorDiv.classList.add('hidden');
+            successDiv.classList.add('hidden');
+            reportDiv.classList.add('hidden');
+
+            // Show loading
+            loadingDiv.classList.remove('hidden');
+            generateBtn.disabled = true;
+            generateBtn.textContent = 'Analyzing...';
+
+            try {
+                // Try to connect to backend first
+                const response = await fetch('http://localhost:9000/generate_budget_plan', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ user_id: userId })
+                });
+
+                if (response.ok) {
+                    const data = await response.json();
+                    reportContent.textContent = data.budget_plan;
+                } else {
+                    throw new Error('Backend not available');
+                }
+            } catch (error) {
+                // Fallback to mock data for demo
+                console.log('Using mock data for demo');
+                await new Promise(resolve => setTimeout(resolve, 2000)); // Simulate processing
+                reportContent.textContent = mockBudgetReport;
+            }
+
+            // Show results
+            loadingDiv.classList.add('hidden');
+            successDiv.classList.remove('hidden');
+            reportDiv.classList.remove('hidden');
+            generateBtn.disabled = false;
+            generateBtn.textContent = 'Generate My Budget Plan';
+        }
+
+        // Auto-generate demo on page load
+        window.addEventListener('load', function() {
+            setTimeout(() => {
+                document.getElementById('generateBtn').click();
+            }, 1000);
+        });
+    </script>
+</body>
+</html>

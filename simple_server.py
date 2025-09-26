@@ -62,5 +62,5 @@ async def health():
 if __name__ == "__main__":
     import uvicorn
     print("Starting AI Budget Planner Demo Server...")
-    print("Open your browser to: http://localhost:8000")
-    uvicorn.run(app, host="0.0.0.0", port=8000)
+    print("Open your browser to: http://localhost:9000")
+    uvicorn.run(app, host="0.0.0.0", port=9000)
