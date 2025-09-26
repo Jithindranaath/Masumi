@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Simple HTTP server to serve the working demo
+Simple HTTP server to serve the FIU demo
 """
 
 import http.server
@@ -10,11 +10,11 @@ import threading
 import time
 import os
 
-def start_server():
-    """Start HTTP server"""
-    PORT = 8080
+def start_demo_server():
+    """Start HTTP server for FIU demo"""
+    PORT = 9090
     
-    class MyHTTPRequestHandler(http.server.SimpleHTTPRequestHandler):
+    class DemoHTTPRequestHandler(http.server.SimpleHTTPRequestHandler):
         def end_headers(self):
             self.send_header('Access-Control-Allow-Origin', '*')
             self.send_header('Access-Control-Allow-Methods', 'GET, POST, OPTIONS')
@@ -23,13 +23,23 @@ def start_server():
         
         def do_GET(self):
             if self.path == '/' or self.path == '':
-                self.path = '/dynamic_demo.html'
+                self.path = '/working_fiu_demo.html'
             return super().do_GET()
     
-    with socketserver.TCPServer(("", PORT), MyHTTPRequestHandler) as httpd:
-        print(f"AI Budget Planner Demo Server running at:")
-        print(f"http://localhost:{PORT}")
+    with socketserver.TCPServer(("", PORT), DemoHTTPRequestHandler) as httpd:
+        print("=" * 60)
+        print("FIU PLATFORM DEMO SERVER")
+        print("=" * 60)
+        print(f"Server running at: http://localhost:{PORT}")
+        print("Features demonstrated:")
+        print("- Legitimate bank account validation")
+        print("- Income and expense tracking")
+        print("- Bank account synchronization")
+        print("- AI budget analysis")
+        print("- Masumi blockchain integration")
+        print("- Real-time financial dashboard")
         print("\nPress Ctrl+C to stop the server")
+        print("=" * 60)
         
         # Open browser after a short delay
         def open_browser():
@@ -41,8 +51,8 @@ def start_server():
         try:
             httpd.serve_forever()
         except KeyboardInterrupt:
-            print("\nShutting down server...")
+            print("\nDemo server stopped")
             httpd.shutdown()
 
 if __name__ == "__main__":
-    start_server()
+    start_demo_server()

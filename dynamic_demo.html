@@ -1,0 +1,283 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Budget Planner - Personal Finance Assistant</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 0; padding: 20px; background: #f5f5f5; }
+        .container { max-width: 1200px; margin: 0 auto; }
+        .header { background: white; padding: 20px; border-radius: 8px; margin-bottom: 20px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); text-align: center; }
+        .card { background: white; padding: 20px; border-radius: 8px; margin-bottom: 20px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+        .form-group { margin-bottom: 15px; }
+        .label { display: block; margin-bottom: 5px; font-weight: bold; color: #374151; }
+        .input { width: 100%; padding: 12px; border: 1px solid #d1d5db; border-radius: 6px; font-size: 16px; box-sizing: border-box; }
+        .input-row { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
+        .btn { background: #3b82f6; color: white; padding: 15px 30px; border: none; border-radius: 6px; cursor: pointer; font-size: 18px; font-weight: bold; width: 100%; }
+        .btn:hover { background: #2563eb; }
+        .btn:disabled { background: #9ca3af; cursor: not-allowed; }
+        .loading { background: #dbeafe; border: 1px solid #93c5fd; padding: 20px; border-radius: 6px; color: #1e40af; text-align: center; }
+        .error { background: #fef2f2; border: 1px solid #fca5a5; padding: 15px; border-radius: 6px; color: #dc2626; }
+        .success { background: #f0fdf4; border: 1px solid #86efac; padding: 15px; border-radius: 6px; color: #166534; }
+        .report { background: #f9fafb; padding: 20px; border-radius: 6px; white-space: pre-wrap; font-family: 'Courier New', monospace; max-height: 500px; overflow-y: auto; border: 1px solid #e5e7eb; }
+        .hidden { display: none; }
+        .spinner { border: 3px solid #f3f4f6; border-top: 3px solid #3b82f6; border-radius: 50%; width: 30px; height: 30px; animation: spin 1s linear infinite; display: inline-block; margin-right: 15px; }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        .expense-item { display: grid; grid-template-columns: 2fr 1fr auto; gap: 10px; align-items: center; margin-bottom: 10px; }
+        .remove-btn { background: #ef4444; color: white; border: none; padding: 8px 12px; border-radius: 4px; cursor: pointer; }
+        .add-btn { background: #10b981; color: white; border: none; padding: 10px 15px; border-radius: 4px; cursor: pointer; margin-top: 10px; }
+        .section-title { color: #1f2937; border-bottom: 2px solid #e5e7eb; padding-bottom: 10px; margin-bottom: 20px; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🤖 AI Budget Planner</h1>
+            <p>Enter your financial details and get personalized AI-powered budget recommendations</p>
+        </div>
+
+        <div class="card">
+            <h2 class="section-title">Personal Information</h2>
+            <div class="form-group">
+                <label class="label">Your Name:</label>
+                <input type="text" id="userName" class="input" placeholder="Enter your full name" value="John Doe">
+            </div>
+            <div class="input-row">
+                <div class="form-group">
+                    <label class="label">Monthly Income (Rs.):</label>
+                    <input type="number" id="monthlyIncome" class="input" placeholder="50000" value="50000">
+                </div>
+                <div class="form-group">
+                    <label class="label">Currency:</label>
+                    <select id="currency" class="input">
+                        <option value="Rs.">Indian Rupees (Rs.)</option>
+                        <option value="$">US Dollars ($)</option>
+                        <option value="€">Euros (€)</option>
+                        <option value="£">British Pounds (£)</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+
+        <div class="card">
+            <h2 class="section-title">Monthly Expenses</h2>
+            <div id="expensesList">
+                <div class="expense-item">
+                    <input type="text" class="input expense-desc" placeholder="Expense description (e.g., Rent)" value="Rent">
+                    <input type="number" class="input expense-amount" placeholder="Amount" value="15000">
+                    <button class="remove-btn" onclick="removeExpense(this)">Remove</button>
+                </div>
+                <div class="expense-item">
+                    <input type="text" class="input expense-desc" placeholder="Expense description" value="Groceries">
+                    <input type="number" class="input expense-amount" placeholder="Amount" value="8000">
+                    <button class="remove-btn" onclick="removeExpense(this)">Remove</button>
+                </div>
+                <div class="expense-item">
+                    <input type="text" class="input expense-desc" placeholder="Expense description" value="Transportation">
+                    <input type="number" class="input expense-amount" placeholder="Amount" value="3000">
+                    <button class="remove-btn" onclick="removeExpense(this)">Remove</button>
+                </div>
+            </div>
+            <button class="add-btn" onclick="addExpense()">+ Add Another Expense</button>
+        </div>
+
+        <div class="card">
+            <button id="generateBtn" class="btn" onclick="generatePersonalizedBudget()">
+                🚀 Generate My Personalized Budget Plan
+            </button>
+        </div>
+
+        <div id="loadingDiv" class="card loading hidden">
+            <div class="spinner"></div>
+            <strong>AI is analyzing your financial data...</strong>
+            <p>🗂️ Processing your expenses → 📊 Calculating ratios → 💡 Creating strategy → ✍️ Generating personalized report</p>
+        </div>
+
+        <div id="errorDiv" class="card error hidden">
+            <strong>Error:</strong>
+            <p id="errorMsg"></p>
+        </div>
+
+        <div id="successDiv" class="card success hidden">
+            <strong>✅ Your Personal Budget Analysis is Ready!</strong>
+            <p>Based on your income and expenses, here's your customized financial plan.</p>
+        </div>
+
+        <div id="reportDiv" class="card hidden">
+            <h3>📋 Your Personalized AI Budget Report</h3>
+            <div id="reportContent" class="report"></div>
+        </div>
+    </div>
+
+    <script>
+        function addExpense() {
+            const expensesList = document.getElementById('expensesList');
+            const newExpense = document.createElement('div');
+            newExpense.className = 'expense-item';
+            newExpense.innerHTML = `
+                <input type="text" class="input expense-desc" placeholder="Expense description">
+                <input type="number" class="input expense-amount" placeholder="Amount">
+                <button class="remove-btn" onclick="removeExpense(this)">Remove</button>
+            `;
+            expensesList.appendChild(newExpense);
+        }
+
+        function removeExpense(button) {
+            button.parentElement.remove();
+        }
+
+        function collectUserData() {
+            const userName = document.getElementById('userName').value || 'User';
+            const monthlyIncome = parseFloat(document.getElementById('monthlyIncome').value) || 0;
+            const currency = document.getElementById('currency').value;
+            
+            const expenses = [];
+            const expenseItems = document.querySelectorAll('.expense-item');
+            
+            expenseItems.forEach(item => {
+                const desc = item.querySelector('.expense-desc').value;
+                const amount = parseFloat(item.querySelector('.expense-amount').value) || 0;
+                if (desc && amount > 0) {
+                    expenses.push({ description: desc, amount: amount });
+                }
+            });
+
+            return { userName, monthlyIncome, currency, expenses };
+        }
+
+        function generatePersonalizedReport(userData) {
+            const { userName, monthlyIncome, currency, expenses } = userData;
+            
+            // Calculate totals
+            const totalExpenses = expenses.reduce((sum, exp) => sum + exp.amount, 0);
+            const netSavings = monthlyIncome - totalExpenses;
+            const savingsRate = monthlyIncome > 0 ? ((netSavings / monthlyIncome) * 100) : 0;
+            
+            // 50/30/20 Budget recommendations
+            const needsBudget = monthlyIncome * 0.5;
+            const wantsBudget = monthlyIncome * 0.3;
+            const savingsBudget = monthlyIncome * 0.2;
+            
+            // Generate insights
+            const insights = [];
+            
+            if (savingsRate < 20) {
+                const shortfall = savingsBudget - netSavings;
+                insights.push(`Your current savings rate is ${savingsRate.toFixed(1)}%. Try to save an additional ${currency}${shortfall.toFixed(0)} per month to reach the recommended 20%.`);
+            } else {
+                insights.push(`Excellent! Your savings rate of ${savingsRate.toFixed(1)}% exceeds the recommended 20%. Keep up the great work!`);
+            }
+            
+            if (totalExpenses > needsBudget) {
+                insights.push(`Your total expenses (${currency}${totalExpenses.toLocaleString()}) exceed the recommended 50% for needs. Consider reducing some expenses.`);
+            }
+            
+            // Find highest expense
+            if (expenses.length > 0) {
+                const highestExpense = expenses.reduce((max, exp) => exp.amount > max.amount ? exp : max);
+                const expensePercentage = (highestExpense.amount / monthlyIncome) * 100;
+                insights.push(`Your highest expense is ${highestExpense.description} at ${currency}${highestExpense.amount.toLocaleString()} (${expensePercentage.toFixed(1)}% of income).`);
+            }
+
+            // Generate the report
+            const report = `# ${userName}'s Personalized Budget Report
+
+## 📊 Financial Summary
+- **Monthly Income**: ${currency}${monthlyIncome.toLocaleString()}
+- **Total Expenses**: ${currency}${totalExpenses.toLocaleString()}
+- **Net Savings**: ${currency}${netSavings.toLocaleString()}
+- **Savings Rate**: ${savingsRate.toFixed(1)}%
+
+## 💡 Budget Recommendations (50/30/20 Rule)
+- **Needs (50%)**: ${currency}${needsBudget.toLocaleString()}
+- **Wants (30%)**: ${currency}${wantsBudget.toLocaleString()}
+- **Savings (20%)**: ${currency}${savingsBudget.toLocaleString()}
+
+## 🎯 Personalized Insights
+${insights.map((insight, index) => `${index + 1}. ${insight}`).join('\n')}
+
+## 📈 Your Expense Breakdown
+${expenses.map(exp => {
+    const percentage = monthlyIncome > 0 ? ((exp.amount / monthlyIncome) * 100) : 0;
+    return `- **${exp.description}**: ${currency}${exp.amount.toLocaleString()} (${percentage.toFixed(1)}% of income)`;
+}).join('\n')}
+
+## 💰 Financial Health Score
+${savingsRate >= 20 ? '🟢 Excellent' : savingsRate >= 10 ? '🟡 Good' : '🔴 Needs Improvement'} - Savings Rate: ${savingsRate.toFixed(1)}%
+
+## 📋 Action Items
+${netSavings < 0 ? '🚨 **Priority**: Your expenses exceed your income. Immediate budget cuts needed.' : ''}
+${savingsRate < 20 ? `💡 **Goal**: Increase savings by ${currency}${(savingsBudget - netSavings).toFixed(0)} per month` : '✅ **Maintain**: Keep up your excellent savings habits'}
+${expenses.length > 0 ? `🔍 **Review**: Consider if ${expenses.reduce((max, exp) => exp.amount > max.amount ? exp : max).description} expense can be optimized` : ''}
+
+---
+*Generated by AI Budget Planner specifically for ${userName}*
+*Report created on ${new Date().toLocaleDateString()}*`;
+
+            return report;
+        }
+
+        async function generatePersonalizedBudget() {
+            const generateBtn = document.getElementById('generateBtn');
+            const loadingDiv = document.getElementById('loadingDiv');
+            const errorDiv = document.getElementById('errorDiv');
+            const successDiv = document.getElementById('successDiv');
+            const reportDiv = document.getElementById('reportDiv');
+            const reportContent = document.getElementById('reportContent');
+
+            // Validate input
+            const userData = collectUserData();
+            if (!userData.userName.trim()) {
+                alert('Please enter your name');
+                return;
+            }
+            if (userData.monthlyIncome <= 0) {
+                alert('Please enter a valid monthly income');
+                return;
+            }
+            if (userData.expenses.length === 0) {
+                alert('Please add at least one expense');
+                return;
+            }
+
+            // Reset states
+            loadingDiv.classList.add('hidden');
+            errorDiv.classList.add('hidden');
+            successDiv.classList.add('hidden');
+            reportDiv.classList.add('hidden');
+
+            // Show loading
+            loadingDiv.classList.remove('hidden');
+            generateBtn.disabled = true;
+            generateBtn.innerHTML = '🔄 Analyzing Your Finances...';
+
+            try {
+                // Simulate AI processing time
+                await new Promise(resolve => setTimeout(resolve, 3000));
+                
+                // Generate personalized report
+                const personalizedReport = generatePersonalizedReport(userData);
+                reportContent.textContent = personalizedReport;
+
+                // Show success and report
+                loadingDiv.classList.add('hidden');
+                successDiv.classList.remove('hidden');
+                reportDiv.classList.remove('hidden');
+
+            } catch (error) {
+                loadingDiv.classList.add('hidden');
+                document.getElementById('errorMsg').textContent = error.message;
+                errorDiv.classList.remove('hidden');
+            } finally {
+                generateBtn.disabled = false;
+                generateBtn.innerHTML = '🚀 Generate My Personalized Budget Plan';
+            }
+        }
+
+        // Auto-focus on name field when page loads
+        window.addEventListener('load', function() {
+            document.getElementById('userName').focus();
+        });
+    </script>
+</body>
+</html>
