@@ -1,0 +1,1465 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FIU Platform - Secure Login</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); min-height: 100vh; display: flex; align-items: center; justify-content: center; }
+        .auth-container { background: white; padding: 40px; border-radius: 20px; box-shadow: 0 20px 40px rgba(0,0,0,0.1); width: 100%; max-width: 450px; }
+        .app-container { background: #f8fafc; min-height: 100vh; }
+        .header { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 20px; text-align: center; }
+        .nav { display: flex; justify-content: center; gap: 15px; margin: 20px 0; flex-wrap: wrap; }
+        .nav-btn { background: rgba(255,255,255,0.2); color: white; border: none; padding: 10px 20px; border-radius: 25px; cursor: pointer; transition: all 0.3s; }
+        .nav-btn:hover, .nav-btn.active { background: rgba(255,255,255,0.3); }
+        .section { background: white; padding: 25px; border-radius: 12px; margin: 20px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
+        .hidden { display: none; }
+        .form-group { margin-bottom: 20px; }
+        .label { display: block; margin-bottom: 8px; font-weight: 600; color: #374151; }
+        .input, .select { width: 100%; padding: 15px; border: 2px solid #e5e7eb; border-radius: 10px; font-size: 16px; transition: border-color 0.3s; }
+        .input:focus, .select:focus { outline: none; border-color: #667eea; box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1); }
+        .btn { width: 100%; background: #667eea; color: white; padding: 15px; border: none; border-radius: 10px; cursor: pointer; font-weight: 600; font-size: 16px; transition: all 0.3s; }
+        .btn:hover { background: #5a67d8; transform: translateY(-2px); }
+        .btn:disabled { background: #9ca3af; cursor: not-allowed; transform: none; }
+        .btn-secondary { background: transparent; color: #667eea; border: 2px solid #667eea; }
+        .btn-secondary:hover { background: #667eea; color: white; }
+        .logo { text-align: center; margin-bottom: 30px; }
+        .logo h1 { color: #667eea; font-size: 2.5em; margin-bottom: 10px; }
+        .logo p { color: #6b7280; }
+        .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
+        .alert { padding: 15px; border-radius: 8px; margin-bottom: 20px; }
+        .alert-success { background: #d1fae5; color: #065f46; border: 1px solid #a7f3d0; }
+        .alert-error { background: #fee2e2; color: #991b1b; border: 1px solid #fca5a5; }
+        .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 20px; margin: 20px 0; }
+        .stat-card { background: white; padding: 20px; border-radius: 12px; text-align: center; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+        .stat-value { font-size: 2em; font-weight: bold; color: #667eea; }
+        .stat-label { color: #6b7280; margin-top: 5px; }
+        .balance-card { background: linear-gradient(135deg, #10b981 0%, #059669 100%); color: white; }
+        .card { background: #f8fafc; padding: 20px; border-radius: 8px; margin-bottom: 15px; border-left: 4px solid #667eea; }
+        .transaction-item { display: flex; justify-content: space-between; align-items: center; padding: 15px; border-bottom: 1px solid #e5e7eb; }
+        .transaction-item:last-child { border-bottom: none; }
+        .amount-credit { color: #10b981; font-weight: bold; }
+        .amount-debit { color: #ef4444; font-weight: bold; }
+        .toggle-link { color: #667eea; cursor: pointer; text-decoration: underline; margin-top: 20px; text-align: center; display: block; }
+    </style>
+</head>
+<body>
+    <!-- Authentication Container -->
+    <div id="authContainer" class="auth-container">
+        <div class="logo">
+            <h1>🏦 FIU</h1>
+            <p>Secure Financial Management Platform</p>
+        </div>
+
+        <div id="alerts"></div>
+
+        <!-- Login Form -->
+        <div id="loginForm">
+            <h2 style="text-align: center; margin-bottom: 30px; color: #374151;">Welcome Back</h2>
+            
+            <div class="form-group">
+                <label class="label">Email or Phone</label>
+                <input type="text" id="loginEmail" class="input" placeholder="Enter your email or phone">
+            </div>
+            
+            <div class="form-group">
+                <label class="label">Password</label>
+                <input type="password" id="loginPassword" class="input" placeholder="Enter your password">
+            </div>
+            
+            <button class="btn" onclick="login()">Sign In</button>
+            
+            <span class="toggle-link" onclick="showSignup()">Don't have an account? Sign up</span>
+        </div>
+
+        <!-- Signup Form -->
+        <div id="signupForm" class="hidden">
+            <h2 style="text-align: center; margin-bottom: 30px; color: #374151;">Create Account</h2>
+            
+            <div class="form-group">
+                <label class="label">Full Name</label>
+                <input type="text" id="signupName" class="input" placeholder="Enter your full name">
+            </div>
+            
+            <div class="form-grid">
+                <div class="form-group">
+                    <label class="label">Email</label>
+                    <input type="email" id="signupEmail" class="input" placeholder="Email">
+                </div>
+                <div class="form-group">
+                    <label class="label">Phone</label>
+                    <input type="tel" id="signupPhone" class="input" placeholder="Phone">
+                </div>
+            </div>
+            
+            <div class="form-group">
+                <label class="label">Password</label>
+                <input type="password" id="signupPassword" class="input" placeholder="Create password">
+            </div>
+            
+            <h3 style="margin: 30px 0 20px 0; color: #374151;">Bank Account Details</h3>
+            
+            <div class="form-group">
+                <label class="label">Account Holder Name</label>
+                <input type="text" id="accountHolderName" class="input" placeholder="As per bank records">
+            </div>
+            
+            <div class="form-grid">
+                <div class="form-group">
+                    <label class="label">Account Number</label>
+                    <input type="text" id="accountNumber" class="input" placeholder="Account number">
+                </div>
+                <div class="form-group">
+                    <label class="label">IFSC Code</label>
+                    <input type="text" id="ifscCode" class="input" placeholder="IFSC code">
+                </div>
+            </div>
+            
+            <div class="form-grid">
+                <div class="form-group">
+                    <label class="label">Bank Name</label>
+                    <input type="text" id="bankName" class="input" placeholder="Bank name">
+                </div>
+                <div class="form-group">
+                    <label class="label">Account Type</label>
+                    <select id="accountType" class="select">
+                        <option value="savings">Savings</option>
+                        <option value="current">Current</option>
+                        <option value="salary">Salary</option>
+                    </select>
+                </div>
+            </div>
+            
+            <button class="btn" onclick="signup()">Create Account</button>
+            
+            <span class="toggle-link" onclick="showLogin()">Already have an account? Sign in</span>
+        </div>
+    </div>
+
+    <!-- Main App Container -->
+    <div id="appContainer" class="app-container hidden">
+        <div class="header">
+            <h1>🏦 FIU Platform</h1>
+            <p>Welcome back, <span id="userName">User</span></p>
+            <div class="nav">
+                <button class="nav-btn active" onclick="showSection('dashboard')">Dashboard</button>
+                <button class="nav-btn" onclick="showSection('transactions')">Transactions</button>
+                <button class="nav-btn" onclick="showSection('expenses')">Expense Analysis</button>
+                <button class="nav-btn" onclick="showSection('budget')">AI Budget</button>
+                <button class="nav-btn" onclick="showSection('profile')">Profile</button>
+                <button class="nav-btn" onclick="logout()">Logout</button>
+            </div>
+        </div>
+
+        <!-- Dashboard Section -->
+        <div id="dashboard" class="section">
+            <h2>📊 Financial Dashboard</h2>
+            
+            <div class="stats-grid">
+                <div class="stat-card balance-card">
+                    <div class="stat-value" id="totalBalance">Rs.0</div>
+                    <div class="stat-label">Total Balance</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value" id="totalTransactions">0</div>
+                    <div class="stat-label">Transactions</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value" id="savingsRate">0%</div>
+                    <div class="stat-label">Savings Rate</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value">✓</div>
+                    <div class="stat-label">Bank Synced</div>
+                </div>
+            </div>
+
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+                <div class="card">
+                    <h3>💰 Quick Add Income</h3>
+                    <div class="form-group">
+                        <input type="number" id="quickIncomeAmount" class="input" placeholder="Amount">
+                    </div>
+                    <div class="form-group">
+                        <input type="text" id="quickIncomeSource" class="input" placeholder="Source">
+                    </div>
+                    <button class="btn" onclick="addQuickIncome()">Add Income</button>
+                </div>
+                
+                <div class="card">
+                    <h3>💸 Quick Add Expense</h3>
+                    <div class="form-group">
+                        <input type="number" id="quickExpenseAmount" class="input" placeholder="Amount">
+                    </div>
+                    <div class="form-group">
+                        <select id="quickExpenseCategory" class="select">
+                            <option value="food">Food</option>
+                            <option value="transport">Transport</option>
+                            <option value="shopping">Shopping</option>
+                            <option value="bills">Bills</option>
+                            <option value="rent">Rent</option>
+                        </select>
+                    </div>
+                    <button class="btn" onclick="addQuickExpense()">Add Expense</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Transactions Section -->
+        <div id="transactions" class="section hidden">
+            <h2>📋 Transaction History</h2>
+            <div id="transactionsList">
+                <div class="transaction-item">
+                    <div>
+                        <strong>Welcome Bonus</strong><br>
+                        <small>Account setup • Masumi TX: welcome123...</small>
+                    </div>
+                    <div>
+                        <span class="amount-credit">+Rs.1,000</span><br>
+                        <small>Completed</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Expense Analysis Section -->
+        <div id="expenses" class="section hidden">
+            <h2>💸 Expense Analysis</h2>
+            
+            <!-- Expense Overview Cards -->
+            <div class="stats-grid">
+                <div class="stat-card" style="background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%); color: white;">
+                    <div class="stat-value" id="totalExpenseAmount">Rs.0</div>
+                    <div class="stat-label">Total Expenses</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value" id="expenseCount">0</div>
+                    <div class="stat-label">Expense Transactions</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value" id="avgExpense">Rs.0</div>
+                    <div class="stat-label">Average Expense</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value" id="topExpenseCategory">-</div>
+                    <div class="stat-label">Top Category</div>
+                </div>
+            </div>
+            
+            <!-- Add Detailed Expense -->
+            <div class="card">
+                <h3>💳 Add Detailed Expense</h3>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+                    <div>
+                        <div class="form-group">
+                            <label class="label">Amount (Rs.):</label>
+                            <input type="number" id="detailedExpenseAmount" class="input" placeholder="Enter amount">
+                        </div>
+                        <div class="form-group">
+                            <label class="label">Category:</label>
+                            <select id="detailedExpenseCategory" class="select">
+                                <option value="food">Food & Dining</option>
+                                <option value="transport">Transportation</option>
+                                <option value="shopping">Shopping</option>
+                                <option value="bills">Bills & Utilities</option>
+                                <option value="rent">Rent/Mortgage</option>
+                                <option value="entertainment">Entertainment</option>
+                                <option value="healthcare">Healthcare</option>
+                                <option value="education">Education</option>
+                                <option value="groceries">Groceries</option>
+                                <option value="fuel">Fuel</option>
+                                <option value="clothing">Clothing</option>
+                                <option value="other">Other</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label class="label">Merchant/Store:</label>
+                            <input type="text" id="detailedExpenseMerchant" class="input" placeholder="Where did you spend?">
+                        </div>
+                    </div>
+                    <div>
+                        <div class="form-group">
+                            <label class="label">Reason for Expense:</label>
+                            <textarea id="detailedExpenseReason" class="input" rows="3" placeholder="Why did you spend this money? (e.g., Monthly groceries, Emergency repair, Birthday gift)"></textarea>
+                        </div>
+                        <div class="form-group">
+                            <label class="label">Priority Level:</label>
+                            <select id="expensePriority" class="select">
+                                <option value="essential">Essential (Must have)</option>
+                                <option value="important">Important (Should have)</option>
+                                <option value="optional">Optional (Nice to have)</option>
+                                <option value="impulse">Impulse (Unplanned)</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label class="label">Payment Method:</label>
+                            <select id="paymentMethod" class="select">
+                                <option value="cash">Cash</option>
+                                <option value="card">Debit/Credit Card</option>
+                                <option value="upi">UPI</option>
+                                <option value="netbanking">Net Banking</option>
+                                <option value="other">Other</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+                <button class="btn" onclick="addDetailedExpense()">💸 Add Detailed Expense</button>
+            </div>
+            
+            <!-- Expense Analysis Results -->
+            <div class="card">
+                <h3>📊 AI Expense Analysis</h3>
+                <div id="expenseAnalysisContent">
+                    <p style="text-align: center; color: #6b7280; padding: 20px;">Add expenses to see detailed AI analysis...</p>
+                </div>
+            </div>
+            
+            <!-- Expense Categories Breakdown -->
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+                <div class="card">
+                    <h3>📈 Category Breakdown</h3>
+                    <div id="categoryBreakdown"></div>
+                </div>
+                <div class="card">
+                    <h3>🎯 Spending Insights</h3>
+                    <div id="spendingInsights"></div>
+                </div>
+            </div>
+            
+            <!-- Recent Detailed Expenses -->
+            <div class="card">
+                <h3>📋 Recent Expenses with Reasons</h3>
+                <div id="detailedExpensesList"></div>
+            </div>
+        </div>
+
+        <!-- Budget Section -->
+        <div id="budget" class="section hidden">
+            <h2>🤖 AI Budget Analysis</h2>
+            
+            <!-- Live Analysis Status -->
+            <div class="card" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white;">
+                <h3>📊 Live AI Analysis</h3>
+                <p id="analysisStatus">AI continuously analyzes your transactions in real-time</p>
+                <div style="margin-top: 15px;">
+                    <span id="lastAnalyzed">Last updated: Never</span>
+                    <button class="btn" style="background: rgba(255,255,255,0.2); margin-left: 15px;" onclick="forceAnalysis()">🔄 Refresh Analysis</button>
+                </div>
+            </div>
+            
+            <!-- Current Budget Report -->
+            <div id="currentBudgetReport" class="card">
+                <h3>📋 Current Budget Report</h3>
+                <div id="liveBudgetContent">
+                    <p style="text-align: center; color: #6b7280; padding: 40px;">Add transactions to see live AI budget analysis...</p>
+                </div>
+            </div>
+            
+            <!-- Quick Insights Cards -->
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px; margin-top: 20px;">
+                <div class="card" id="savingsInsight">
+                    <h4>💰 Savings Analysis</h4>
+                    <div id="savingsContent">No data yet</div>
+                </div>
+                <div class="card" id="spendingInsight">
+                    <h4>💸 Spending Patterns</h4>
+                    <div id="spendingContent">No data yet</div>
+                </div>
+                <div class="card" id="recommendationInsight">
+                    <h4>💡 AI Recommendations</h4>
+                    <div id="recommendationContent">No data yet</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Profile Section -->
+        <div id="profile" class="section hidden">
+            <h2>👤 Profile & Settings</h2>
+            <div class="card">
+                <div style="display: flex; align-items: center; gap: 20px; margin-bottom: 30px;">
+                    <div id="profilePictureContainer" style="width: 80px; height: 80px; border-radius: 50%; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); display: flex; align-items: center; justify-content: center; color: white; font-size: 32px; font-weight: bold;"></div>
+                    <div>
+                        <h3 style="margin: 0; color: #374151;">Account Information</h3>
+                        <p style="margin: 5px 0; color: #6b7280;">Member since <span id="memberSince">-</span></p>
+                    </div>
+                </div>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+                    <div>
+                        <p style="margin-bottom: 15px;"><strong>Full Name:</strong><br><span id="profileName" style="color: #6b7280;">-</span></p>
+                        <p style="margin-bottom: 15px;"><strong>Email Address:</strong><br><span id="profileEmail" style="color: #6b7280;">-</span></p>
+                    </div>
+                    <div>
+                        <p style="margin-bottom: 15px;"><strong>Phone Number:</strong><br><span id="profilePhone" style="color: #6b7280;">-</span></p>
+                        <p style="margin-bottom: 15px;"><strong>Primary Bank:</strong><br><span id="profileBank" style="color: #6b7280;">-</span></p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let currentUser = null;
+        let currentBalance = 1000; // Welcome bonus
+        let transactionCount = 1;
+        
+        function calculateActualBalance(userEmail) {
+            // Calculate balance from all transactions
+            const userTransactions = JSON.parse(localStorage.getItem(`fiu_transactions_${userEmail}`) || '[]');
+            const hasWelcomeBonus = localStorage.getItem(`fiu_welcome_${userEmail}`) === 'true';
+            let balance = hasWelcomeBonus ? 1000 : 0; // Only add welcome bonus once
+            
+            userTransactions.forEach(tx => {
+                if (tx.type === 'credit') {
+                    balance += Math.abs(tx.amount);
+                } else {
+                    balance -= Math.abs(tx.amount);
+                }
+            });
+            
+            return balance;
+        }
+        
+        function saveUserBalance(userEmail, balance) {
+            localStorage.setItem(`fiu_balance_${userEmail}`, balance.toString());
+        }
+        
+        function loadUserBalance(userEmail) {
+            // Calculate actual balance from transactions
+            return calculateActualBalance(userEmail);
+        }
+
+        function showAlert(message, type = 'success') {
+            const alertsDiv = document.getElementById('alerts');
+            const alert = document.createElement('div');
+            alert.className = `alert alert-${type}`;
+            alert.textContent = message;
+            alertsDiv.appendChild(alert);
+            
+            setTimeout(() => {
+                alert.remove();
+            }, 5000);
+        }
+
+        function showLogin() {
+            document.getElementById('loginForm').classList.remove('hidden');
+            document.getElementById('signupForm').classList.add('hidden');
+        }
+
+        function showSignup() {
+            document.getElementById('loginForm').classList.add('hidden');
+            document.getElementById('signupForm').classList.remove('hidden');
+        }
+
+        function login() {
+            const email = document.getElementById('loginEmail').value;
+            const password = document.getElementById('loginPassword').value;
+            
+            if (!email || !password) {
+                showAlert('Please fill all fields', 'error');
+                return;
+            }
+            
+            // Check if user exists in localStorage
+            const users = JSON.parse(localStorage.getItem('fiu_users') || '{}');
+            const user = users[email];
+            
+            if (!user || user.password !== password) {
+                showAlert('Invalid credentials', 'error');
+                return;
+            }
+            
+            currentUser = user;
+            localStorage.setItem('fiu_current_user', JSON.stringify(user));
+            
+            showApp();
+        }
+
+        function signup() {
+            const name = document.getElementById('signupName').value;
+            const email = document.getElementById('signupEmail').value;
+            const phone = document.getElementById('signupPhone').value;
+            const password = document.getElementById('signupPassword').value;
+            const accountHolderName = document.getElementById('accountHolderName').value;
+            const accountNumber = document.getElementById('accountNumber').value;
+            const ifscCode = document.getElementById('ifscCode').value;
+            const bankName = document.getElementById('bankName').value;
+            const accountType = document.getElementById('accountType').value;
+            
+            if (!name || !email || !phone || !password || !accountHolderName || !accountNumber || !ifscCode || !bankName) {
+                showAlert('Please fill all fields', 'error');
+                return;
+            }
+            
+            // Validate IFSC format
+            if (!/^[A-Z]{4}0[A-Z0-9]{6}$/.test(ifscCode)) {
+                showAlert('Invalid IFSC code format', 'error');
+                return;
+            }
+            
+            // Validate account number
+            if (accountNumber.length < 9 || accountNumber.length > 18) {
+                showAlert('Account number must be 9-18 digits', 'error');
+                return;
+            }
+            
+            const users = JSON.parse(localStorage.getItem('fiu_users') || '{}');
+            
+            if (users[email]) {
+                showAlert('User already exists', 'error');
+                return;
+            }
+            
+            const newUser = {
+                name,
+                email,
+                phone,
+                password,
+                profilePicture: generateProfilePicture(name),
+                bankAccount: {
+                    accountHolderName,
+                    accountNumber,
+                    ifscCode,
+                    bankName,
+                    accountType,
+                    balance: 0
+                },
+                createdAt: new Date().toISOString()
+            };
+            
+            users[email] = newUser;
+            localStorage.setItem('fiu_users', JSON.stringify(users));
+            localStorage.setItem(`fiu_welcome_${email}`, 'true'); // Mark welcome bonus given
+            
+            currentUser = newUser;
+            localStorage.setItem('fiu_current_user', JSON.stringify(newUser));
+            
+            showAlert('Account created successfully!');
+            setTimeout(() => {
+                showApp();
+            }, 1000);
+        }
+
+        function generateProfilePicture(name) {
+            return name.charAt(0).toUpperCase();
+        }
+        
+        function showApp() {
+            document.getElementById('authContainer').classList.add('hidden');
+            document.getElementById('appContainer').classList.remove('hidden');
+            
+            // Update user info
+            document.getElementById('userName').textContent = currentUser.name;
+            document.getElementById('profileName').textContent = currentUser.name;
+            document.getElementById('profileEmail').textContent = currentUser.email;
+            document.getElementById('profilePhone').textContent = currentUser.phone;
+            document.getElementById('profileBank').textContent = `${currentUser.bankAccount.bankName} - ${currentUser.bankAccount.accountNumber}`;
+            
+            // Update profile picture
+            const profilePic = currentUser.profilePicture || generateProfilePicture(currentUser.name);
+            document.getElementById('profilePictureContainer').textContent = profilePic;
+            
+            // Update member since date
+            const memberDate = new Date(currentUser.createdAt).toLocaleDateString();
+            document.getElementById('memberSince').textContent = memberDate;
+            
+            // Load actual balance from transactions
+            currentBalance = loadUserBalance(currentUser.email);
+            
+            // Load user transactions
+            loadUserTransactions();
+            
+            // Add live insights panel
+            addLiveInsightsPanel();
+            
+            // Update dashboard
+            updateDashboard();
+            
+            // Initial AI analysis
+            setTimeout(() => {
+                const transactions = collectUserTransactions();
+                const analysis = analyzeTransactionsWithAI(transactions);
+                updateCurrentInsight(analysis);
+                updateLiveInsights(analysis);
+                updateAIBudgetSection(analysis);
+                updateExpenseAnalysis();
+            }, 1000);
+        }
+        
+        function loadUserTransactions() {
+            const userTransactions = JSON.parse(localStorage.getItem(`fiu_transactions_${currentUser.email}`) || '[]');
+            const transactionsList = document.getElementById('transactionsList');
+            const hasWelcomeBonus = localStorage.getItem(`fiu_welcome_${currentUser.email}`) === 'true';
+            
+            // Clear existing transactions
+            transactionsList.innerHTML = '';
+            
+            // Add welcome bonus only if it exists
+            if (hasWelcomeBonus) {
+                const welcomeDiv = document.createElement('div');
+                welcomeDiv.className = 'transaction-item';
+                welcomeDiv.innerHTML = `
+                    <div>
+                        <strong>Welcome Bonus</strong><br>
+                        <small>Account setup • Masumi TX: welcome123...</small>
+                    </div>
+                    <div>
+                        <span class="amount-credit">+Rs.1,000</span><br>
+                        <small>Completed</small>
+                    </div>
+                `;
+                transactionsList.appendChild(welcomeDiv);
+            }
+            
+            // Add stored transactions
+            userTransactions.forEach(tx => {
+                const transactionDiv = document.createElement('div');
+                transactionDiv.className = 'transaction-item';
+                
+                const amountClass = tx.type === 'credit' ? 'amount-credit' : 'amount-debit';
+                const amountSign = tx.type === 'credit' ? '+' : '-';
+                
+                transactionDiv.innerHTML = `
+                    <div>
+                        <strong>${tx.description}</strong><br>
+                        <small>${tx.date.split('T')[0]} • Masumi TX: ${tx.masumi_tx_hash}...</small>
+                    </div>
+                    <div>
+                        <span class="${amountClass}">${amountSign}Rs.${Math.abs(tx.amount).toLocaleString()}</span><br>
+                        <small>Completed</small>
+                    </div>
+                `;
+                
+                transactionsList.appendChild(transactionDiv);
+            });
+            
+            // Update transaction count
+            transactionCount = userTransactions.length + (hasWelcomeBonus ? 1 : 0);
+            
+            // Recalculate balance to ensure accuracy
+            currentBalance = calculateActualBalance(currentUser.email);
+        }
+
+        function updateDashboard() {
+            document.getElementById('totalBalance').textContent = `Rs.${currentBalance.toLocaleString()}`;
+            document.getElementById('totalTransactions').textContent = transactionCount;
+            document.getElementById('savingsRate').textContent = '95.0%';
+        }
+
+        function showSection(sectionName) {
+            document.querySelectorAll('.section').forEach(section => {
+                section.classList.add('hidden');
+            });
+            document.getElementById(sectionName).classList.remove('hidden');
+            
+            document.querySelectorAll('.nav-btn').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            event.target.classList.add('active');
+        }
+
+        function addQuickIncome() {
+            const amount = parseFloat(document.getElementById('quickIncomeAmount').value);
+            const source = document.getElementById('quickIncomeSource').value;
+            
+            if (!amount || !source) {
+                showAlert('Please fill all fields', 'error');
+                return;
+            }
+            
+            currentBalance += amount;
+            transactionCount++;
+            
+            addTransaction(`Income from ${source}`, amount, 'credit');
+            
+            // Save updated balance
+            saveUserBalance(currentUser.email, currentBalance);
+            
+            updateDashboard();
+            
+            // Auto-analyze budget after transaction
+            autoAnalyzeBudget();
+            
+            document.getElementById('quickIncomeAmount').value = '';
+            document.getElementById('quickIncomeSource').value = '';
+            
+            showAlert(`Income of Rs.${amount.toLocaleString()} added successfully! AI analyzing your budget...`);
+        }
+
+        function addQuickExpense() {
+            const amount = parseFloat(document.getElementById('quickExpenseAmount').value);
+            const category = document.getElementById('quickExpenseCategory').value;
+            
+            if (!amount) {
+                showAlert('Please enter amount', 'error');
+                return;
+            }
+            
+            if (amount > currentBalance) {
+                showAlert('Insufficient balance', 'error');
+                return;
+            }
+            
+            currentBalance -= amount;
+            transactionCount++;
+            
+            addTransaction(`${category.charAt(0).toUpperCase() + category.slice(1)} expense`, amount, 'debit');
+            
+            // Save updated balance
+            saveUserBalance(currentUser.email, currentBalance);
+            
+            updateDashboard();
+            
+            // Auto-analyze budget after transaction
+            autoAnalyzeBudget();
+            
+            document.getElementById('quickExpenseAmount').value = '';
+            
+            showAlert(`Expense of Rs.${amount.toLocaleString()} added successfully! AI analyzing your budget...`);
+        }
+
+        function addTransaction(description, amount, type) {
+            // Store transaction for AI analysis
+            const transaction = {
+                description,
+                amount,
+                type,
+                date: new Date().toISOString(),
+                masumi_tx_hash: Math.random().toString(36).substr(2, 12)
+            };
+            
+            // Save to localStorage for persistence
+            const userTransactions = JSON.parse(localStorage.getItem(`fiu_transactions_${currentUser.email}`) || '[]');
+            userTransactions.unshift(transaction);
+            localStorage.setItem(`fiu_transactions_${currentUser.email}`, JSON.stringify(userTransactions));
+            
+            // Update UI
+            const transactionsList = document.getElementById('transactionsList');
+            const newTransaction = document.createElement('div');
+            newTransaction.className = 'transaction-item';
+            
+            const amountClass = type === 'credit' ? 'amount-credit' : 'amount-debit';
+            const amountSign = type === 'credit' ? '+' : '-';
+            
+            newTransaction.innerHTML = `
+                <div>
+                    <strong>${description}</strong><br>
+                    <small>${new Date().toISOString().split('T')[0]} • Masumi TX: ${transaction.masumi_tx_hash}...</small>
+                </div>
+                <div>
+                    <span class="${amountClass}">${amountSign}Rs.${amount.toLocaleString()}</span><br>
+                    <small>Completed</small>
+                </div>
+            `;
+            
+            transactionsList.insertBefore(newTransaction, transactionsList.firstChild);
+        }
+
+        function updateAIBudgetSection(analysis) {
+            // Update the complete AI Budget section with live data
+            updateLiveBudgetReport(analysis);
+            updateQuickInsightCards(analysis);
+        }
+        
+        function updateLiveBudgetReport(analysis) {
+            const liveBudgetContent = document.getElementById('liveBudgetContent');
+            
+            if (analysis.transactionCount <= 1) {
+                liveBudgetContent.innerHTML = `
+                    <div style="text-align: center; color: #6b7280; padding: 40px;">
+                        <h4>🚀 Getting Started</h4>
+                        <p>Add income and expense transactions to see comprehensive AI analysis</p>
+                        <p><strong>Current Status:</strong> ${analysis.transactionCount} transaction(s) recorded</p>
+                    </div>
+                `;
+                return;
+            }
+            
+            // Generate comprehensive live report
+            const report = generateLiveBudgetReport(analysis);
+            liveBudgetContent.innerHTML = `<pre style="white-space: pre-wrap; font-family: 'Segoe UI', sans-serif; line-height: 1.6; font-size: 14px;">${report}</pre>`;
+        }
+        
+        function updateQuickInsightCards(analysis) {
+            // Update Savings Analysis Card
+            const savingsContent = document.getElementById('savingsContent');
+            let savingsHTML = '';
+            
+            if (analysis.savingsRate >= 25) {
+                savingsHTML = `
+                    <div style="color: #10b981;">
+                        <div style="font-size: 2em; font-weight: bold;">${analysis.savingsRate.toFixed(1)}%</div>
+                        <div>🏆 Outstanding Performance!</div>
+                        <div style="margin-top: 10px; font-size: 12px;">You're saving Rs.${analysis.netSavings.toLocaleString()} per month</div>
+                    </div>
+                `;
+            } else if (analysis.savingsRate >= 20) {
+                savingsHTML = `
+                    <div style="color: #059669;">
+                        <div style="font-size: 2em; font-weight: bold;">${analysis.savingsRate.toFixed(1)}%</div>
+                        <div>✅ Meeting Target!</div>
+                        <div style="margin-top: 10px; font-size: 12px;">You're on track with Rs.${analysis.netSavings.toLocaleString()} saved</div>
+                    </div>
+                `;
+            } else {
+                const shortfall = (analysis.totalIncome * 0.2) - analysis.netSavings;
+                savingsHTML = `
+                    <div style="color: #ef4444;">
+                        <div style="font-size: 2em; font-weight: bold;">${analysis.savingsRate.toFixed(1)}%</div>
+                        <div>⚠️ Below Target</div>
+                        <div style="margin-top: 10px; font-size: 12px;">Need Rs.${shortfall.toFixed(0)} more to reach 20%</div>
+                    </div>
+                `;
+            }
+            savingsContent.innerHTML = savingsHTML;
+            
+            // Update Spending Patterns Card
+            const spendingContent = document.getElementById('spendingContent');
+            let spendingHTML = '';
+            
+            if (Object.keys(analysis.expenseBreakdown).length > 0) {
+                const topExpense = Object.entries(analysis.expenseBreakdown).reduce((a, b) => a[1] > b[1] ? a : b);
+                const expensePercentage = (topExpense[1] / analysis.totalIncome * 100);
+                
+                spendingHTML = `
+                    <div>
+                        <div><strong>Top Category:</strong> ${topExpense[0]}</div>
+                        <div style="font-size: 1.5em; font-weight: bold; color: #667eea;">Rs.${topExpense[1].toLocaleString()}</div>
+                        <div style="font-size: 12px; color: #6b7280;">${expensePercentage.toFixed(1)}% of total income</div>
+                        <div style="margin-top: 10px;">
+                            ${expensePercentage > 30 ? '🚨 High spending alert!' : expensePercentage > 20 ? '⚠️ Monitor this category' : '✅ Within normal range'}
+                        </div>
+                    </div>
+                `;
+            } else {
+                spendingHTML = '<div style="color: #6b7280;">No expenses recorded yet</div>';
+            }
+            spendingContent.innerHTML = spendingHTML;
+            
+            // Update AI Recommendations Card
+            const recommendationContent = document.getElementById('recommendationContent');
+            const recommendations = generateLiveRecommendations(analysis);
+            recommendationContent.innerHTML = recommendations;
+        }
+        
+        function generateLiveBudgetReport(analysis) {
+            // Generate insights
+            let insights = [];
+            if (analysis.savingsRate >= 25) {
+                insights.push(`🎉 Outstanding! Your ${analysis.savingsRate.toFixed(1)}% savings rate is exceptional.`);
+            } else if (analysis.savingsRate >= 20) {
+                insights.push(`✅ Excellent! Your ${analysis.savingsRate.toFixed(1)}% savings rate meets the 20% target.`);
+            } else {
+                insights.push(`⚠️ Your ${analysis.savingsRate.toFixed(1)}% savings rate needs improvement. Target: 20%.`);
+            }
+            
+            if (Object.keys(analysis.expenseBreakdown).length > 0) {
+                const topExpense = Object.entries(analysis.expenseBreakdown).reduce((a, b) => a[1] > b[1] ? a : b);
+                const expensePercentage = (topExpense[1] / analysis.totalIncome * 100);
+                insights.push(`💡 ${topExpense[0]} is your highest expense at ${expensePercentage.toFixed(1)}% of income.`);
+            }
+            
+            // Generate expense breakdown
+            let expenseBreakdown = '';
+            Object.entries(analysis.expenseBreakdown)
+                .sort((a, b) => b[1] - a[1])
+                .forEach(([category, amount]) => {
+                    const percentage = (amount / analysis.totalIncome * 100);
+                    expenseBreakdown += `- **${category}**: Rs.${amount.toLocaleString()} (${percentage.toFixed(1)}%)\n`;
+                });
+            
+            return `# Live AI Budget Analysis
+
+## 📊 Current Financial Status
+- **Total Income**: Rs.${analysis.totalIncome.toLocaleString()}
+- **Total Expenses**: Rs.${analysis.totalExpenses.toLocaleString()}
+- **Net Savings**: Rs.${analysis.netSavings.toLocaleString()}
+- **Savings Rate**: ${analysis.savingsRate.toFixed(1)}%
+- **Transactions**: ${analysis.transactionCount}
+
+## 🎯 Live Insights
+${insights.map((insight, i) => `${i + 1}. ${insight}`).join('\n')}
+
+## 💸 Expense Breakdown
+${expenseBreakdown || 'No expenses recorded yet'}
+
+## 💡 50/30/20 Budget Target
+- **Needs (50%)**: Rs.${(analysis.totalIncome * 0.5).toLocaleString()}
+- **Wants (30%)**: Rs.${(analysis.totalIncome * 0.3).toLocaleString()}
+- **Savings (20%)**: Rs.${(analysis.totalIncome * 0.2).toLocaleString()}
+
+---
+*Updated automatically after each transaction*
+*Last analysis: ${new Date().toLocaleTimeString()}*`;
+        }
+        
+        function generateLiveRecommendations(analysis) {
+            let recommendations = [];
+            
+            if (analysis.savingsRate < 20) {
+                const shortfall = (analysis.totalIncome * 0.2) - analysis.netSavings;
+                recommendations.push(`🎯 Reduce expenses by Rs.${shortfall.toFixed(0)}/month`);
+            } else if (analysis.savingsRate > 30) {
+                recommendations.push(`💰 Consider investing excess savings`);
+            }
+            
+            if (Object.keys(analysis.expenseBreakdown).length > 0) {
+                const topExpense = Object.entries(analysis.expenseBreakdown).reduce((a, b) => a[1] > b[1] ? a : b);
+                const expensePercentage = (topExpense[1] / analysis.totalIncome * 100);
+                
+                if (expensePercentage > 25) {
+                    recommendations.push(`⚠️ Optimize ${topExpense[0]} spending`);
+                }
+            }
+            
+            if (recommendations.length === 0) {
+                recommendations.push(`✅ Your finances look healthy!`);
+            }
+            
+            return recommendations.map(rec => `<div style="margin-bottom: 8px;">${rec}</div>`).join('');
+        }
+        
+        function updateAnalysisStatus() {
+            document.getElementById('analysisStatus').textContent = 'AI analysis updated automatically after your last transaction';
+            document.getElementById('lastAnalyzed').textContent = `Last updated: ${new Date().toLocaleTimeString()}`;
+        }
+        
+        function addDetailedExpense() {
+            const amount = parseFloat(document.getElementById('detailedExpenseAmount').value);
+            const category = document.getElementById('detailedExpenseCategory').value;
+            const merchant = document.getElementById('detailedExpenseMerchant').value;
+            const reason = document.getElementById('detailedExpenseReason').value;
+            const priority = document.getElementById('expensePriority').value;
+            const paymentMethod = document.getElementById('paymentMethod').value;
+            
+            if (!amount || !reason) {
+                showAlert('Please enter amount and reason for expense', 'error');
+                return;
+            }
+            
+            if (amount > currentBalance) {
+                showAlert('Insufficient balance', 'error');
+                return;
+            }
+            
+            // Create detailed expense object
+            const detailedExpense = {
+                description: `${category.charAt(0).toUpperCase() + category.slice(1)} expense${merchant ? ` at ${merchant}` : ''}`,
+                amount: amount,
+                type: 'debit',
+                date: new Date().toISOString(),
+                masumi_tx_hash: Math.random().toString(36).substr(2, 12),
+                category: category,
+                merchant: merchant,
+                reason: reason,
+                priority: priority,
+                paymentMethod: paymentMethod,
+                isDetailed: true
+            };
+            
+            // Update balance
+            currentBalance -= amount;
+            transactionCount++;
+            
+            // Store detailed expense
+            const userTransactions = JSON.parse(localStorage.getItem(`fiu_transactions_${currentUser.email}`) || '[]');
+            userTransactions.unshift(detailedExpense);
+            localStorage.setItem(`fiu_transactions_${currentUser.email}`, JSON.stringify(userTransactions));
+            
+            // Save balance
+            saveUserBalance(currentUser.email, currentBalance);
+            
+            // Update UI
+            addTransactionToUI(detailedExpense);
+            updateDashboard();
+            updateExpenseAnalysis();
+            autoAnalyzeBudget();
+            
+            // Clear form
+            document.getElementById('detailedExpenseAmount').value = '';
+            document.getElementById('detailedExpenseMerchant').value = '';
+            document.getElementById('detailedExpenseReason').value = '';
+            
+            showAlert(`Detailed expense of Rs.${amount.toLocaleString()} added with reason analysis!`);
+        }
+        
+        function addTransactionToUI(transaction) {
+            const transactionsList = document.getElementById('transactionsList');
+            const newTransaction = document.createElement('div');
+            newTransaction.className = 'transaction-item';
+            
+            const amountClass = transaction.type === 'credit' ? 'amount-credit' : 'amount-debit';
+            const amountSign = transaction.type === 'credit' ? '+' : '-';
+            
+            newTransaction.innerHTML = `
+                <div>
+                    <strong>${transaction.description}</strong><br>
+                    <small>${transaction.date.split('T')[0]} • Masumi TX: ${transaction.masumi_tx_hash}...</small>
+                </div>
+                <div>
+                    <span class="${amountClass}">${amountSign}Rs.${Math.abs(transaction.amount).toLocaleString()}</span><br>
+                    <small>Completed</small>
+                </div>
+            `;
+            
+            transactionsList.insertBefore(newTransaction, transactionsList.firstChild);
+        }
+        
+        function updateExpenseAnalysis() {
+            const userTransactions = JSON.parse(localStorage.getItem(`fiu_transactions_${currentUser.email}`) || '[]');
+            const expenses = userTransactions.filter(tx => tx.type === 'debit');
+            
+            if (expenses.length === 0) {
+                document.getElementById('expenseAnalysisContent').innerHTML = '<p style="text-align: center; color: #6b7280; padding: 20px;">Add expenses to see detailed AI analysis...</p>';
+                return;
+            }
+            
+            // Calculate expense metrics
+            const totalExpenses = expenses.reduce((sum, exp) => sum + Math.abs(exp.amount), 0);
+            const avgExpense = totalExpenses / expenses.length;
+            
+            // Category breakdown
+            const categoryTotals = {};
+            const priorityBreakdown = {};
+            const reasonAnalysis = {};
+            
+            expenses.forEach(exp => {
+                const category = exp.category || 'other';
+                const priority = exp.priority || 'unknown';
+                const reason = exp.reason || 'No reason provided';
+                
+                categoryTotals[category] = (categoryTotals[category] || 0) + Math.abs(exp.amount);
+                priorityBreakdown[priority] = (priorityBreakdown[priority] || 0) + Math.abs(exp.amount);
+                
+                if (exp.reason) {
+                    reasonAnalysis[reason] = (reasonAnalysis[reason] || 0) + Math.abs(exp.amount);
+                }
+            });
+            
+            // Update overview cards
+            document.getElementById('totalExpenseAmount').textContent = `Rs.${totalExpenses.toLocaleString()}`;
+            document.getElementById('expenseCount').textContent = expenses.length;
+            document.getElementById('avgExpense').textContent = `Rs.${avgExpense.toLocaleString()}`;
+            
+            const topCategory = Object.entries(categoryTotals).reduce((a, b) => a[1] > b[1] ? a : b);
+            document.getElementById('topExpenseCategory').textContent = topCategory[0].charAt(0).toUpperCase() + topCategory[0].slice(1);
+            
+            // Generate AI analysis
+            generateExpenseAIAnalysis(expenses, categoryTotals, priorityBreakdown, reasonAnalysis);
+            updateCategoryBreakdown(categoryTotals);
+            updateSpendingInsights(expenses, priorityBreakdown);
+            updateDetailedExpensesList(expenses);
+        }
+        
+        function generateExpenseAIAnalysis(expenses, categoryTotals, priorityBreakdown, reasonAnalysis) {
+            const totalExpenses = expenses.reduce((sum, exp) => sum + Math.abs(exp.amount), 0);
+            const totalIncome = calculateTotalIncome();
+            const expenseRatio = (totalExpenses / totalIncome * 100).toFixed(1);
+            
+            let analysis = `# AI Expense Analysis Report\n\n`;
+            analysis += `## 📊 Expense Overview\n`;
+            analysis += `- **Total Expenses**: Rs.${totalExpenses.toLocaleString()}\n`;
+            analysis += `- **Expense Ratio**: ${expenseRatio}% of total income\n`;
+            analysis += `- **Number of Transactions**: ${expenses.length}\n`;
+            analysis += `- **Average Expense**: Rs.${(totalExpenses / expenses.length).toLocaleString()}\n\n`;
+            
+            // Priority analysis
+            analysis += `## 🎯 Priority Analysis\n`;
+            Object.entries(priorityBreakdown).forEach(([priority, amount]) => {
+                const percentage = (amount / totalExpenses * 100).toFixed(1);
+                const emoji = priority === 'essential' ? '🔴' : priority === 'important' ? '🟡' : priority === 'optional' ? '🟢' : '🔵';
+                analysis += `- **${emoji} ${priority.charAt(0).toUpperCase() + priority.slice(1)}**: Rs.${amount.toLocaleString()} (${percentage}%)\n`;
+            });
+            
+            // Reason insights
+            analysis += `\n## 💡 Spending Reasons Analysis\n`;
+            const topReasons = Object.entries(reasonAnalysis).sort((a, b) => b[1] - a[1]).slice(0, 5);
+            topReasons.forEach(([reason, amount], index) => {
+                analysis += `${index + 1}. **"${reason}"** - Rs.${amount.toLocaleString()}\n`;
+            });
+            
+            // AI recommendations
+            analysis += `\n## 🤖 AI Recommendations\n`;
+            
+            if (priorityBreakdown.impulse && (priorityBreakdown.impulse / totalExpenses) > 0.2) {
+                analysis += `⚠️ **Impulse Control**: ${((priorityBreakdown.impulse / totalExpenses) * 100).toFixed(1)}% of expenses are impulse purchases. Consider a 24-hour waiting period for non-essential purchases.\n`;
+            }
+            
+            if (expenseRatio > 80) {
+                analysis += `🚨 **High Spending Alert**: You're spending ${expenseRatio}% of your income. Aim to reduce expenses to 70-80%.\n`;
+            }
+            
+            const topCategory = Object.entries(categoryTotals).reduce((a, b) => a[1] > b[1] ? a : b);
+            if ((topCategory[1] / totalExpenses) > 0.4) {
+                analysis += `💡 **Category Focus**: ${topCategory[0]} represents ${((topCategory[1] / totalExpenses) * 100).toFixed(1)}% of your expenses. Look for optimization opportunities in this area.\n`;
+            }
+            
+            analysis += `\n---\n*Analysis updated: ${new Date().toLocaleString()}*`;
+            
+            document.getElementById('expenseAnalysisContent').innerHTML = `<pre style="white-space: pre-wrap; font-family: 'Segoe UI', sans-serif; line-height: 1.6; font-size: 14px;">${analysis}</pre>`;
+        }
+        
+        function updateCategoryBreakdown(categoryTotals) {
+            const categoryBreakdown = document.getElementById('categoryBreakdown');
+            let html = '';
+            
+            Object.entries(categoryTotals)
+                .sort((a, b) => b[1] - a[1])
+                .forEach(([category, amount]) => {
+                    const percentage = (amount / Object.values(categoryTotals).reduce((a, b) => a + b, 0) * 100).toFixed(1);
+                    html += `
+                        <div style="display: flex; justify-content: space-between; align-items: center; padding: 8px 0; border-bottom: 1px solid #e5e7eb;">
+                            <span>${category.charAt(0).toUpperCase() + category.slice(1)}</span>
+                            <div style="text-align: right;">
+                                <div style="font-weight: bold;">Rs.${amount.toLocaleString()}</div>
+                                <div style="font-size: 12px; color: #6b7280;">${percentage}%</div>
+                            </div>
+                        </div>
+                    `;
+                });
+            
+            categoryBreakdown.innerHTML = html;
+        }
+        
+        function updateSpendingInsights(expenses, priorityBreakdown) {
+            const insights = document.getElementById('spendingInsights');
+            let html = '';
+            
+            // Priority insights
+            const totalExpenses = expenses.reduce((sum, exp) => sum + Math.abs(exp.amount), 0);
+            
+            if (priorityBreakdown.essential) {
+                const essentialPercentage = (priorityBreakdown.essential / totalExpenses * 100).toFixed(1);
+                html += `<div style="margin-bottom: 10px;"><strong>🔴 Essential:</strong> ${essentialPercentage}% (Rs.${priorityBreakdown.essential.toLocaleString()})</div>`;
+            }
+            
+            if (priorityBreakdown.impulse) {
+                const impulsePercentage = (priorityBreakdown.impulse / totalExpenses * 100).toFixed(1);
+                const status = impulsePercentage > 20 ? '🚨 High' : impulsePercentage > 10 ? '⚠️ Moderate' : '✅ Low';
+                html += `<div style="margin-bottom: 10px;"><strong>🔵 Impulse:</strong> ${status} (${impulsePercentage}%)</div>`;
+            }
+            
+            // Recent spending pattern
+            const recentExpenses = expenses.slice(0, 5);
+            const avgRecent = recentExpenses.reduce((sum, exp) => sum + Math.abs(exp.amount), 0) / recentExpenses.length;
+            html += `<div style="margin-bottom: 10px;"><strong>📈 Recent Avg:</strong> Rs.${avgRecent.toLocaleString()}</div>`;
+            
+            insights.innerHTML = html;
+        }
+        
+        function updateDetailedExpensesList(expenses) {
+            const detailedList = document.getElementById('detailedExpensesList');
+            const detailedExpenses = expenses.filter(exp => exp.isDetailed).slice(0, 10);
+            
+            if (detailedExpenses.length === 0) {
+                detailedList.innerHTML = '<p style="color: #6b7280; text-align: center; padding: 20px;">No detailed expenses recorded yet</p>';
+                return;
+            }
+            
+            let html = '';
+            detailedExpenses.forEach(exp => {
+                const priorityColor = exp.priority === 'essential' ? '#ef4444' : exp.priority === 'important' ? '#f59e0b' : exp.priority === 'optional' ? '#10b981' : '#6b7280';
+                html += `
+                    <div style="border: 1px solid #e5e7eb; border-radius: 8px; padding: 15px; margin-bottom: 10px;">
+                        <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 10px;">
+                            <div>
+                                <strong>${exp.description}</strong>
+                                <div style="font-size: 12px; color: #6b7280;">${exp.date.split('T')[0]} • ${exp.paymentMethod}</div>
+                            </div>
+                            <div style="text-align: right;">
+                                <div style="font-weight: bold; color: #ef4444;">Rs.${Math.abs(exp.amount).toLocaleString()}</div>
+                                <div style="font-size: 12px; color: ${priorityColor}; font-weight: bold;">${exp.priority.toUpperCase()}</div>
+                            </div>
+                        </div>
+                        <div style="background: #f8fafc; padding: 10px; border-radius: 6px; font-style: italic;">
+                            <strong>Reason:</strong> "${exp.reason}"
+                        </div>
+                    </div>
+                `;
+            });
+            
+            detailedList.innerHTML = html;
+        }
+        
+        function calculateTotalIncome() {
+            const userTransactions = JSON.parse(localStorage.getItem(`fiu_transactions_${currentUser.email}`) || '[]');
+            const income = userTransactions.filter(tx => tx.type === 'credit');
+            return income.reduce((sum, inc) => sum + Math.abs(inc.amount), 0) + 1000; // +1000 for welcome bonus
+        }
+        
+        function forceAnalysis() {
+            showAlert('Refreshing AI analysis...', 'info');
+            autoAnalyzeBudget();
+        }
+        
+        function generateBudget() {
+            // Force immediate analysis
+            forceAnalysis();
+        }
+        
+        function collectUserTransactions() {
+            // Get transactions from localStorage or current session
+            const userTransactions = JSON.parse(localStorage.getItem(`fiu_transactions_${currentUser.email}`) || '[]');
+            const hasWelcomeBonus = localStorage.getItem(`fiu_welcome_${currentUser.email}`) === 'true';
+            
+            // Add welcome bonus only if it exists
+            const transactions = [];
+            if (hasWelcomeBonus) {
+                transactions.push({
+                    description: 'Welcome Bonus',
+                    amount: 1000,
+                    type: 'credit',
+                    date: new Date().toISOString(),
+                    category: 'bonus'
+                });
+            }
+            
+            transactions.push(...userTransactions);
+            return transactions;
+        }
+        
+        function analyzeTransactionsWithAI(transactions) {
+            // Simulate comprehensive AI analysis
+            let totalIncome = 0;
+            let totalExpenses = 0;
+            const expenseBreakdown = {};
+            const incomeBreakdown = {};
+            
+            transactions.forEach(tx => {
+                const amount = Math.abs(tx.amount);
+                
+                if (tx.type === 'credit') {
+                    totalIncome += amount;
+                    const category = categorizeIncome(tx.description);
+                    incomeBreakdown[category] = (incomeBreakdown[category] || 0) + amount;
+                } else {
+                    totalExpenses += amount;
+                    const category = categorizeExpense(tx.description);
+                    expenseBreakdown[category] = (expenseBreakdown[category] || 0) + amount;
+                }
+            });
+            
+            const netSavings = totalIncome - totalExpenses;
+            const savingsRate = totalIncome > 0 ? (netSavings / totalIncome * 100) : 0;
+            
+            return {
+                totalIncome,
+                totalExpenses,
+                netSavings,
+                savingsRate,
+                expenseBreakdown,
+                incomeBreakdown,
+                transactionCount: transactions.length
+            };
+        }
+        
+        function categorizeIncome(description) {
+            const desc = description.toLowerCase();
+            if (desc.includes('salary') || desc.includes('payroll')) return 'Salary';
+            if (desc.includes('business') || desc.includes('profit')) return 'Business';
+            if (desc.includes('freelance') || desc.includes('contract')) return 'Freelance';
+            if (desc.includes('investment') || desc.includes('dividend')) return 'Investment';
+            if (desc.includes('bonus') || desc.includes('welcome')) return 'Bonus';
+            return 'Other Income';
+        }
+        
+        function categorizeExpense(description) {
+            const desc = description.toLowerCase();
+            if (desc.includes('food') || desc.includes('restaurant') || desc.includes('dining')) return 'Food & Dining';
+            if (desc.includes('transport') || desc.includes('uber') || desc.includes('fuel')) return 'Transportation';
+            if (desc.includes('shopping') || desc.includes('mall') || desc.includes('store')) return 'Shopping';
+            if (desc.includes('rent') || desc.includes('mortgage') || desc.includes('apartment')) return 'Rent/Mortgage';
+            if (desc.includes('bill') || desc.includes('electricity') || desc.includes('internet')) return 'Bills & Utilities';
+            if (desc.includes('entertainment') || desc.includes('movie') || desc.includes('netflix')) return 'Entertainment';
+            return 'Other';
+        }
+        
+        function displayBudgetAnalysis(analysis) {
+            const budgetSection = document.getElementById('budget');
+            
+            // Generate insights
+            let insights = [];
+            if (analysis.savingsRate >= 20) {
+                insights.push(`🎉 Excellent! Your savings rate of ${analysis.savingsRate.toFixed(1)}% exceeds the recommended 20%.`);
+            } else {
+                insights.push(`⚠️ Your savings rate of ${analysis.savingsRate.toFixed(1)}% is below the recommended 20%. Consider reducing expenses.`);
+            }
+            
+            if (Object.keys(analysis.expenseBreakdown).length > 0) {
+                const topExpense = Object.entries(analysis.expenseBreakdown).reduce((a, b) => a[1] > b[1] ? a : b);
+                const expensePercentage = (topExpense[1] / analysis.totalIncome * 100).toFixed(1);
+                insights.push(`💡 Your highest expense category is ${topExpense[0]} at Rs.${topExpense[1].toLocaleString()} (${expensePercentage}% of income).`);
+            }
+            
+            // Generate expense breakdown
+            let expenseBreakdown = '';
+            Object.entries(analysis.expenseBreakdown)
+                .sort((a, b) => b[1] - a[1])
+                .forEach(([category, amount]) => {
+                    const percentage = (amount / analysis.totalIncome * 100).toFixed(1);
+                    expenseBreakdown += `- **${category}**: Rs.${amount.toLocaleString()} (${percentage}% of income)\n`;
+                });
+            
+            // Generate income breakdown
+            let incomeBreakdown = '';
+            Object.entries(analysis.incomeBreakdown)
+                .sort((a, b) => b[1] - a[1])
+                .forEach(([category, amount]) => {
+                    const percentage = (amount / analysis.totalIncome * 100).toFixed(1);
+                    incomeBreakdown += `- **${category}**: Rs.${amount.toLocaleString()} (${percentage}% of total income)\n`;
+                });
+            
+            const report = `
+# Your AI-Generated Budget Report
+
+## 📊 Financial Summary
+- **Total Income**: Rs.${analysis.totalIncome.toLocaleString()}
+- **Total Expenses**: Rs.${analysis.totalExpenses.toLocaleString()}
+- **Net Savings**: Rs.${analysis.netSavings.toLocaleString()}
+- **Savings Rate**: ${analysis.savingsRate.toFixed(1)}%
+- **Transactions Analyzed**: ${analysis.transactionCount}
+
+## 💡 Budget Recommendations (50/30/20 Rule)
+- **Needs (50%)**: Rs.${(analysis.totalIncome * 0.5).toLocaleString()}
+- **Wants (30%)**: Rs.${(analysis.totalIncome * 0.3).toLocaleString()}
+- **Savings (20%)**: Rs.${(analysis.totalIncome * 0.2).toLocaleString()}
+
+## 🎯 Personalized Insights
+${insights.map((insight, i) => `${i + 1}. ${insight}`).join('\n')}
+
+## 💰 Income Breakdown
+${incomeBreakdown}
+
+## 💸 Expense Breakdown
+${expenseBreakdown}
+
+## 💎 Financial Health Score
+${analysis.savingsRate >= 20 ? '🏆 **Score**: 85/100 - Grade A (Excellent)' : analysis.savingsRate >= 10 ? '🥈 **Score**: 70/100 - Grade B (Good)' : '⚠️ **Score**: 55/100 - Grade C (Needs Improvement)'}
+
+---
+*Generated by AI Budget Planner on ${new Date().toLocaleDateString()}*
+*Powered by CrewAI & Masumi Network*`;
+            
+            // Update the budget section with the report
+            budgetSection.innerHTML = `
+                <h2>🤖 AI Budget Analysis</h2>
+                <div class="card">
+                    <pre style="white-space: pre-wrap; font-family: 'Segoe UI', sans-serif; line-height: 1.6; font-size: 14px;">${report}</pre>
+                </div>
+            `;
+        }
+
+        function logout() {
+            localStorage.removeItem('fiu_current_user');
+            currentUser = null;
+            
+            document.getElementById('authContainer').classList.remove('hidden');
+            document.getElementById('appContainer').classList.add('hidden');
+            
+            showLogin();
+            showAlert('Logged out successfully');
+        }
+
+        function autoAnalyzeBudget() {
+            // Automatically analyze budget after each transaction
+            setTimeout(() => {
+                const transactions = collectUserTransactions();
+                const analysis = analyzeTransactionsWithAI(transactions);
+                
+                // Update dashboard with live insights
+                updateLiveInsights(analysis);
+                
+                // Update live insights panel
+                updateCurrentInsight(analysis);
+                
+                // Always update AI Budget section (live analysis)
+                updateAIBudgetSection(analysis);
+                
+                // Update analysis status
+                updateAnalysisStatus();
+                
+            }, 1000);
+        }
+        
+        function updateLiveInsights(analysis) {
+            // Update savings rate in dashboard
+            document.getElementById('savingsRate').textContent = `${analysis.savingsRate.toFixed(1)}%`;
+            
+            // Add live insight notification
+            let insightMessage = '';
+            if (analysis.savingsRate >= 30) {
+                insightMessage = `🎉 Excellent savings rate: ${analysis.savingsRate.toFixed(1)}%`;
+            } else if (analysis.savingsRate >= 20) {
+                insightMessage = `✅ Good savings rate: ${analysis.savingsRate.toFixed(1)}%`;
+            } else if (analysis.savingsRate >= 10) {
+                insightMessage = `⚠️ Savings rate: ${analysis.savingsRate.toFixed(1)}% - Consider reducing expenses`;
+            } else {
+                insightMessage = `🚨 Low savings rate: ${analysis.savingsRate.toFixed(1)}% - Immediate action needed`;
+            }
+            
+            // Show insight as a temporary notification
+            setTimeout(() => {
+                showAlert(insightMessage, 'info');
+            }, 2000);
+        }
+        
+        function addLiveInsightsPanel() {
+            // Add live insights panel to dashboard
+            const dashboard = document.getElementById('dashboard');
+            const insightsPanel = document.createElement('div');
+            insightsPanel.id = 'liveInsights';
+            insightsPanel.className = 'card';
+            insightsPanel.innerHTML = `
+                <h3>🤖 Live AI Insights</h3>
+                <div id="currentInsight">Add transactions to see AI insights...</div>
+                <div style="margin-top: 10px;">
+                    <small>Updates automatically after each transaction</small>
+                </div>
+            `;
+            
+            // Insert after stats grid
+            const statsGrid = dashboard.querySelector('.stats-grid');
+            statsGrid.parentNode.insertBefore(insightsPanel, statsGrid.nextSibling);
+        }
+        
+        function updateCurrentInsight(analysis) {
+            const insightDiv = document.getElementById('currentInsight');
+            if (!insightDiv) return;
+            
+            let insight = '';
+            
+            if (analysis.transactionCount <= 1) {
+                insight = 'Add more transactions for detailed AI analysis...';
+            } else if (analysis.savingsRate >= 25) {
+                insight = `🏆 Outstanding! ${analysis.savingsRate.toFixed(1)}% savings rate. Consider investing excess savings.`;
+            } else if (analysis.savingsRate >= 20) {
+                insight = `✅ Great job! ${analysis.savingsRate.toFixed(1)}% savings rate meets the 20% target.`;
+            } else {
+                const shortfall = (analysis.totalIncome * 0.2) - analysis.netSavings;
+                insight = `💡 To reach 20% savings target, reduce expenses by Rs.${shortfall.toFixed(0)} per month.`;
+            }
+            
+            // Add expense insight if available
+            if (Object.keys(analysis.expenseBreakdown).length > 0) {
+                const topExpense = Object.entries(analysis.expenseBreakdown).reduce((a, b) => a[1] > b[1] ? a : b);
+                const expensePercentage = (topExpense[1] / analysis.totalIncome * 100);
+                
+                if (expensePercentage > 25) {
+                    insight += `<br><br>⚠️ High spending alert: ${topExpense[0]} is ${expensePercentage.toFixed(1)}% of your income.`;
+                }
+            }
+            
+            insightDiv.innerHTML = insight;
+        }
+
+        // Initialize app
+        window.addEventListener('load', function() {
+            const savedUser = localStorage.getItem('fiu_current_user');
+            if (savedUser) {
+                currentUser = JSON.parse(savedUser);
+                showApp();
+            }
+        });
+    </script>
+</body>
+</html>

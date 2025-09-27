@@ -55,6 +55,14 @@ class Transaction(Base):
     description = Column(String)
     status = Column(String, default="completed")  # pending, completed, failed
     masumi_tx_hash = Column(String)  # Masumi blockchain transaction hash
+    
+    # Detailed expense fields
+    merchant = Column(String)  # Store/merchant name
+    reason = Column(Text)  # Purpose/reason for expense
+    priority = Column(String)  # essential, important, optional, impulse
+    payment_method = Column(String)  # cash, card, upi, netbanking
+    is_detailed = Column(Boolean, default=False)  # Flag for detailed expenses
+    
     created_at = Column(DateTime, default=datetime.datetime.utcnow)
     
     # Relationships

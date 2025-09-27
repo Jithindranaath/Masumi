@@ -52,3 +52,91 @@ class ExtendedFIUService(FIUService):
     def full_account_sync(self, account_id: int) -> Dict:
         """Perform full account sync"""
         return self.sync_service.full_account_sync(account_id)
+    
+    def get_detailed_expenses(self, user_id: str, limit: int = 50) -> Dict:
+        """Get detailed expenses with purposes and spending reasons"""
+        try:
+            # Get all transactions for the user
+            transactions_result = self.get_transaction_history(user_id, limit * 2)  # Get more to filter expenses
+            
+            if "error" in transactions_result:
+                return transactions_result
+            
+            transactions = transactions_result["transactions"]
+            
+            # Filter for expense transactions only
+            expenses = [tx for tx in transactions if tx["type"] == "debit" and tx["category"] == "expense"]
+            
+            # Limit results
+            expenses = expenses[:limit]
+            
+            # Calculate summary statistics
+            total_expenses = sum(abs(tx["amount"]) for tx in expenses)
+            expense_count = len(expenses)
+            avg_expense = total_expenses / expense_count if expense_count > 0 else 0
+            
+            # Category breakdown
+            category_breakdown = {}
+            priority_breakdown = {}
+            reason_analysis = {}
+            merchant_analysis = {}
+            payment_method_breakdown = {}
+            
+            for expense in expenses:
+                # Extract category from description or use 'other'
+                description = expense.get("description", "")
+                category = "other"
+                if ":" in description:
+                    category = description.split(":")[0].split(" at ")[0].lower()
+                
+                priority = expense.get("priority", "unknown")
+                reason = expense.get("reason", "No reason provided")
+                merchant = expense.get("merchant", "Unknown")
+                payment_method = expense.get("payment_method", "unknown")
+                amount = abs(expense["amount"])
+                
+                category_breakdown[category] = category_breakdown.get(category, 0) + amount
+                priority_breakdown[priority] = priority_breakdown.get(priority, 0) + amount
+                payment_method_breakdown[payment_method] = payment_method_breakdown.get(payment_method, 0) + amount
+                
+                if reason and reason != "No reason provided":
+                    reason_analysis[reason] = reason_analysis.get(reason, 0) + amount
+                
+                if merchant and merchant != "Unknown":
+                    merchant_analysis[merchant] = merchant_analysis.get(merchant, 0) + amount
+            
+            # Find top spending patterns
+            top_category = max(category_breakdown.items(), key=lambda x: x[1]) if category_breakdown else ("none", 0)
+            top_reason = max(reason_analysis.items(), key=lambda x: x[1]) if reason_analysis else ("none", 0)
+            top_merchant = max(merchant_analysis.items(), key=lambda x: x[1]) if merchant_analysis else ("none", 0)
+            
+            # Separate detailed and simple expenses
+            detailed_expenses = [tx for tx in expenses if tx.get("is_detailed", False)]
+            simple_expenses = [tx for tx in expenses if not tx.get("is_detailed", False)]
+            
+            return {
+                "expenses": expenses,
+                "detailed_expenses": detailed_expenses,
+                "simple_expenses": simple_expenses,
+                "summary": {
+                    "total_expenses": total_expenses,
+                    "expense_count": expense_count,
+                    "detailed_count": len(detailed_expenses),
+                    "simple_count": len(simple_expenses),
+                    "average_expense": avg_expense,
+                    "top_category": top_category[0],
+                    "top_category_amount": top_category[1],
+                    "top_reason": top_reason[0],
+                    "top_reason_amount": top_reason[1],
+                    "top_merchant": top_merchant[0],
+                    "top_merchant_amount": top_merchant[1]
+                },
+                "breakdowns": {
+                    "by_category": category_breakdown,
+                    "by_priority": priority_breakdown,
+                    "by_reason": reason_analysis,
+                    "by_merchant": merchant_analysis,
+                    "by_payment_method": payment_method_breakdown
+                }
+            }
+            

@@ -359,13 +359,108 @@ class FIUService:
         finally:
             db.close()
     
-    def get_transaction_history(self, user_id: str, limit: int = 50) -> List[Dict]:
+    def add_detailed_expense(self, user_id: str, account_number: str, amount: float, 
+                           category: str, description: str = "", merchant: str = "",
+                           reason: str = "", priority: str = "optional", 
+                           payment_method: str = "card") -> Dict:
+        """Add detailed expense with purpose and priority information"""
+        db = SessionLocal()
+        try:
+            user = db.query(User).filter(User.user_id == user_id).first()
+            if not user:
+                return {"error": "User not found"}
+            
+            account = db.query(BankAccount).filter(
+                BankAccount.account_number == account_number,
+                BankAccount.user_id == user.id
+            ).first()
+            
+            if not account:
+                return {"error": "Account not found"}
+            
+            if account.balance < amount:
+                return {
+                    "error": f"Insufficient balance. Available: Rs.{account.balance:,.2f}, Required: Rs.{amount:,.2f}"
+                }
+            
+            # Validate transaction limits
+            limit_check = BankValidator.validate_transaction_limits(
+                amount, 'withdrawal', account.account_type
+            )
+            
+            if not limit_check['valid']:
+                return {"error": limit_check['error']}
+            
+            # Validate expense categories
+            valid_expense_categories = [
+                'food', 'transport', 'shopping', 'bills', 'entertainment', 
+                'healthcare', 'education', 'rent', 'groceries', 'fuel',
+                'clothing', 'electronics', 'travel', 'insurance', 'loan_emi',
+                'investment', 'charity', 'gifts', 'maintenance', 'other'
+            ]
+            
+            if category.lower() not in valid_expense_categories:
+                category = 'other'
+            
+            # Validate priority
+            valid_priorities = ['essential', 'important', 'optional', 'impulse']
+            if priority.lower() not in valid_priorities:
+                priority = 'optional'
+            
+            # Create detailed debit transaction
+            merchant_info = f" at {merchant}" if merchant else ""
+            transaction = Transaction(
+                user_id=user.id,
+                from_account=account_number,
+                to_account=f"{category}{merchant_info}",
+                amount=amount,
+                transaction_type="debit",
+                category="expense",
+                description=f"{category.title()}{merchant_info}: {description}",
+                merchant=merchant,
+                reason=reason,
+                priority=priority.lower(),
+                payment_method=payment_method.lower(),
+                is_detailed=True,
+                masumi_tx_hash=str(uuid.uuid4())
+            )
+            
+            # Update balance
+            account.balance -= amount
+            
+            db.add(transaction)
+            db.commit()
+            
+            result = {
+                "success": True,
+                "transaction_id": transaction.transaction_id,
+                "new_balance": account.balance,
+                "masumi_tx_hash": transaction.masumi_tx_hash,
+                "expense_category": category.title(),
+                "merchant": merchant,
+                "reason": reason,
+                "priority": priority,
+                "payment_method": payment_method
+            }
+            
+            if limit_check.get('warnings'):
+                result['warnings'] = limit_check['warnings']
+            
+            return result
+            
+        except Exception as e:
+            db.rollback()
+            return {"error": str(e)}
+        finally:
+            db.close()
+    
+    def get_transaction_history(self, user_id: str, limit: int = 50) -> Dict:
         """Get transaction history for user"""
         db = SessionLocal()
         try:
             user = db.query(User).filter(User.user_id == user_id).first()
             if not user:
-                return []
+                return {"error": "User not found"}
             
             transactions = db.query(Transaction).filter(
                 Transaction.user_id == user.id
@@ -373,7 +468,7 @@ class FIUService:
             
             history = []
             for tx in transactions:
-                history.append({
+                tx_data = {
                     "transaction_id": tx.transaction_id,
                     "from_account": tx.from_account,
                     "to_account": tx.to_account,
@@ -384,9 +479,21 @@ class FIUService:
                     "status": tx.status,
                     "masumi_tx_hash": tx.masumi_tx_hash,
                     "date": tx.created_at.isoformat()
-                })
+                }
+                
+                # Add detailed expense fields if available
+                if tx.is_detailed:
+                    tx_data.update({
+                        "merchant": tx.merchant,
+                        "reason": tx.reason,
+                        "priority": tx.priority,
+                        "payment_method": tx.payment_method,
+                        "is_detailed": True
+                    })
+                
+                history.append(tx_data)
             
-            return history
+            return {"transactions": history}
         finally:
             db.close()
     

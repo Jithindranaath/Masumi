@@ -68,6 +68,17 @@ class ExpenseRequest(BaseModel):
     category: str
     description: str = ""
 
+class DetailedExpenseRequest(BaseModel):
+    user_id: str
+    account_number: str
+    amount: float
+    category: str
+    description: str = ""
+    merchant: str = ""
+    reason: str = ""
+    priority: str = "optional"  # essential, important, optional, impulse
+    payment_method: str = "card"  # cash, card, upi, netbanking, other
+
 class BudgetAnalysisRequest(BaseModel):
     user_id: str
 
@@ -146,6 +157,24 @@ async def add_expense(expense_data: ExpenseRequest):
         expense_data.amount,
         expense_data.category,
         expense_data.description
+    )
+    if "error" in result:
+        raise HTTPException(status_code=400, detail=result["error"])
+    return result
+
+@app.post("/api/expense/detailed/add")
+async def add_detailed_expense(expense_data: DetailedExpenseRequest):
+    """Add detailed expense with purpose and priority"""
+    result = fiu_service.add_detailed_expense(
+        expense_data.user_id,
+        expense_data.account_number,
+        expense_data.amount,
+        expense_data.category,
+        expense_data.description,
+        expense_data.merchant,
+        expense_data.reason,
+        expense_data.priority,
+        expense_data.payment_method
     )
     if "error" in result:
         raise HTTPException(status_code=400, detail=result["error"])
@@ -230,6 +259,14 @@ async def full_account_sync(account_id: int):
 async def get_sync_status(user_id: str):
     """Get sync status for user accounts"""
     result = fiu_service.get_sync_status(user_id)
+    if "error" in result:
+        raise HTTPException(status_code=404, detail=result["error"])
+    return result
+
+@app.get("/api/expenses/detailed/{user_id}")
+async def get_detailed_expenses(user_id: str, limit: int = 50):
+    """Get detailed expenses with purposes and reasons"""
+    result = fiu_service.get_detailed_expenses(user_id, limit)
     if "error" in result:
         raise HTTPException(status_code=404, detail=result["error"])
     return result
