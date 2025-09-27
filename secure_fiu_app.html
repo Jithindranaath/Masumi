@@ -186,9 +186,9 @@
                     <div class="stat-value" id="savingsRate">0%</div>
                     <div class="stat-label">Savings Rate</div>
                 </div>
-                <div class="stat-card">
-                    <div class="stat-value">✓</div>
-                    <div class="stat-label">Bank Synced</div>
+                <div class="stat-card" style="cursor: pointer;" onclick="showSection('expenses'); setActiveNav('expenses');">
+                    <div class="stat-value" id="totalExpenses">Rs.0</div>
+                    <div class="stat-label">Total Expenses</div>
                 </div>
             </div>
 
@@ -707,7 +707,22 @@
         function updateDashboard() {
             document.getElementById('totalBalance').textContent = `Rs.${currentBalance.toLocaleString()}`;
             document.getElementById('totalTransactions').textContent = transactionCount;
-            document.getElementById('savingsRate').textContent = '95.0%';
+            
+            // Calculate total expenses
+            const userTransactions = JSON.parse(localStorage.getItem(`fiu_transactions_${currentUser.email}`) || '[]');
+            const totalExpenses = userTransactions
+                .filter(tx => tx.type === 'debit')
+                .reduce((sum, tx) => sum + Math.abs(tx.amount), 0);
+            
+            document.getElementById('totalExpenses').textContent = `Rs.${totalExpenses.toLocaleString()}`;
+            
+            // Calculate savings rate
+            const totalIncome = userTransactions
+                .filter(tx => tx.type === 'credit')
+                .reduce((sum, tx) => sum + Math.abs(tx.amount), 0) + (localStorage.getItem(`fiu_welcome_${currentUser.email}`) === 'true' ? 1000 : 0);
+            
+            const savingsRate = totalIncome > 0 ? ((totalIncome - totalExpenses) / totalIncome * 100) : 0;
+            document.getElementById('savingsRate').textContent = `${savingsRate.toFixed(1)}%`;
         }
 
         function showSection(sectionName) {
