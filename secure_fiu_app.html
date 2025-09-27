@@ -387,7 +387,11 @@
                 </div>
                 <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
                     <div>
-                        <p style="margin-bottom: 15px; color: #f1f5f9;"><strong>Full Name:</strong><br><span id="profileName" style="color: #c7d2fe;">-</span></p>
+                        <div style="margin-bottom: 15px; color: #f1f5f9;">
+                            <strong>Full Name:</strong><br>
+                            <span id="profileName" style="color: #c7d2fe;">-</span>
+                            <button onclick="editName()" style="margin-left: 10px; background: rgba(139, 92, 246, 0.2); color: #8b5cf6; border: 1px solid rgba(139, 92, 246, 0.3); padding: 4px 8px; border-radius: 6px; cursor: pointer; font-size: 12px;">Edit</button>
+                        </div>
                         <p style="margin-bottom: 15px; color: #f1f5f9;"><strong>Email Address:</strong><br><span id="profileEmail" style="color: #c7d2fe;">-</span></p>
                     </div>
                     <div>
@@ -1461,6 +1465,31 @@ ${analysis.savingsRate >= 20 ? '🏆 **Score**: 85/100 - Grade A (Excellent)' : 
             `;
         }
 
+        function editName() {
+            const currentName = currentUser.name;
+            const newName = prompt('Enter new name:', currentName);
+            
+            if (newName && newName.trim() && newName.trim() !== currentName) {
+                const trimmedName = newName.trim();
+                
+                // Update current user object
+                currentUser.name = trimmedName;
+                
+                // Update in localStorage
+                const users = JSON.parse(localStorage.getItem('fiu_users') || '{}');
+                users[currentUser.email].name = trimmedName;
+                localStorage.setItem('fiu_users', JSON.stringify(users));
+                localStorage.setItem('fiu_current_user', JSON.stringify(currentUser));
+                
+                // Update all UI elements that show the name
+                document.getElementById('userName').textContent = trimmedName;
+                document.getElementById('profileName').textContent = trimmedName;
+                document.getElementById('profilePictureContainer').textContent = generateProfilePicture(trimmedName);
+                
+                showAlert('Name updated successfully!');
+            }
+        }
+        
         function logout() {
             localStorage.removeItem('fiu_current_user');
             currentUser = null;
