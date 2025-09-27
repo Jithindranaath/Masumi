@@ -210,13 +210,7 @@
                         <input type="number" id="quickExpenseAmount" class="input" placeholder="-Amount" step="0.01" oninput="handleExpenseInput(this)">
                     </div>
                     <div class="form-group">
-                        <select id="quickExpenseCategory" class="select">
-                            <option value="food">Food</option>
-                            <option value="transport">Transport</option>
-                            <option value="shopping">Shopping</option>
-                            <option value="bills">Bills</option>
-                            <option value="rent">Rent</option>
-                        </select>
+                        <input type="text" id="quickExpenseCategory" class="input" placeholder="Category (e.g., Food, Transport, Shopping)">
                     </div>
                     <button class="btn" onclick="addQuickExpense()">Add Expense</button>
                 </div>
@@ -275,20 +269,7 @@
                         </div>
                         <div class="form-group">
                             <label class="label">Category:</label>
-                            <select id="detailedExpenseCategory" class="select">
-                                <option value="food">Food & Dining</option>
-                                <option value="transport">Transportation</option>
-                                <option value="shopping">Shopping</option>
-                                <option value="bills">Bills & Utilities</option>
-                                <option value="rent">Rent/Mortgage</option>
-                                <option value="entertainment">Entertainment</option>
-                                <option value="healthcare">Healthcare</option>
-                                <option value="education">Education</option>
-                                <option value="groceries">Groceries</option>
-                                <option value="fuel">Fuel</option>
-                                <option value="clothing">Clothing</option>
-                                <option value="other">Other</option>
-                            </select>
+                            <input type="text" id="detailedExpenseCategory" class="input" placeholder="Enter category (e.g., Food & Dining, Transportation)">
                         </div>
                         <div class="form-group">
                             <label class="label">Merchant/Store:</label>
