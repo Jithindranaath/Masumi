@@ -160,11 +160,11 @@
             <h1>💰 MyMoney</h1>
             <p>Hey there, <span id="userName">User</span>! Ready to manage your finances? ✨</p>
             <div class="nav">
-                <button class="nav-btn active" onclick="showSection('dashboard')">Dashboard</button>
-                <button class="nav-btn" onclick="showSection('transactions')">Transactions</button>
-                <button class="nav-btn" onclick="showSection('expenses')">Expense Analysis</button>
-                <button class="nav-btn" onclick="showSection('budget')">AI Budget</button>
-                <button class="nav-btn" onclick="showSection('profile')">Profile</button>
+                <button class="nav-btn active" onclick="showSection('dashboard'); setActiveNav('dashboard');">Dashboard</button>
+                <button class="nav-btn" onclick="showSection('transactions'); setActiveNav('transactions');">Transactions</button>
+                <button class="nav-btn" onclick="showSection('expenses'); setActiveNav('expenses');">Expense Analysis</button>
+                <button class="nav-btn" onclick="showSection('budget'); setActiveNav('budget');">AI Budget</button>
+                <button class="nav-btn" onclick="showSection('profile'); setActiveNav('profile');">Profile</button>
                 <button class="nav-btn" onclick="logout()">Logout</button>
             </div>
         </div>
@@ -178,7 +178,7 @@
                     <div class="stat-value" id="totalBalance">Rs.0</div>
                     <div class="stat-label">Total Balance</div>
                 </div>
-                <div class="stat-card">
+                <div class="stat-card" style="cursor: pointer;" onclick="showSection('transactions'); setActiveNav('transactions');">
                     <div class="stat-value" id="totalTransactions">0</div>
                     <div class="stat-label">Transactions</div>
                 </div>
@@ -715,11 +715,21 @@
                 section.classList.add('hidden');
             });
             document.getElementById(sectionName).classList.remove('hidden');
-            
+        }
+        
+        function setActiveNav(sectionName) {
             document.querySelectorAll('.nav-btn').forEach(btn => {
                 btn.classList.remove('active');
             });
-            event.target.classList.add('active');
+            
+            // Find and activate the correct nav button
+            const navButtons = document.querySelectorAll('.nav-btn');
+            navButtons.forEach(btn => {
+                if (btn.textContent.toLowerCase().includes(sectionName.toLowerCase()) || 
+                    (sectionName === 'transactions' && btn.textContent.includes('Transactions'))) {
+                    btn.classList.add('active');
+                }
+            });
         }
 
         function addQuickIncome() {
@@ -1468,6 +1478,11 @@ ${analysis.savingsRate >= 20 ? '🏆 **Score**: 85/100 - Grade A (Excellent)' : 
         }
         
         function addLiveInsightsPanel() {
+            // Check if panel already exists
+            if (document.getElementById('liveInsights')) {
+                return;
+            }
+            
             // Add live insights panel to dashboard
             const dashboard = document.getElementById('dashboard');
             const insightsPanel = document.createElement('div');
