@@ -1,5 +1,5 @@
 pipeline {
-    agent any
+    agent any // This is fine, it will run on your main Windows machine
 
     stages {
         stage('Checkout') {
@@ -12,26 +12,24 @@ pipeline {
         stage('Build') {
             steps {
                 echo "Building the application..."
-                sh 'echo "Build step executed"'
-                // example: mvn clean package   (for Java)
-                // or: npm install             (for Node)
+                // Use 'bat' instead of 'sh'
+                bat 'echo "Build step executed"'
             }
         }
 
         stage('Test') {
             steps {
                 echo "Running tests..."
-                sh 'echo "Test step executed"'
-                // example: mvn test
-                // or: npm test
+                // Use 'bat' instead of 'sh'
+                bat 'echo "Test step executed"'
             }
         }
 
         stage('Deploy') {
             steps {
                 echo "Deploying application..."
-                sh 'echo "Deploy step executed"'
-                // example: copy files to server / docker deploy etc.
+                // Use 'bat' instead of 'sh'
+                bat 'echo "Deploy step executed"'
             }
         }
     }
