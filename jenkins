@@ -1,0 +1,47 @@
+pipeline {
+    agent any
+
+    stages {
+        stage('Checkout') {
+            steps {
+                echo "Pulling source code from repository..."
+                checkout scm
+            }
+        }
+
+        stage('Build') {
+            steps {
+                echo "Building the application..."
+                sh 'echo "Build step executed"'
+                // example: mvn clean package   (for Java)
+                // or: npm install             (for Node)
+            }
+        }
+
+        stage('Test') {
+            steps {
+                echo "Running tests..."
+                sh 'echo "Test step executed"'
+                // example: mvn test
+                // or: npm test
+            }
+        }
+
+        stage('Deploy') {
+            steps {
+                echo "Deploying application..."
+                sh 'echo "Deploy step executed"'
+                // example: copy files to server / docker deploy etc.
+            }
+        }
+    }
+
+    post {
+        success {
+            echo "✅ Pipeline executed successfully!"
+        }
+        failure {
+            echo "❌ Pipeline failed. Check logs."
+        }
+    }
+}
